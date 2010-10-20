@@ -34,7 +34,7 @@ public:
 	static bool returnQueue(const char* email);
 	bool returnQueue();
 	void statsInsert(const char* email, int code);
-	static void statsInsert(const char* email, int code, int peca, int campanha);
+	static void statsInsert(const char* email, int code, const std::string& m, int peca, int campanha);
 	void eraseQueue(const char* email);
 	static void eraseQueue(const char* email, int id_peca, int id_campanha);
 	vDadosPessoa getEmails(int threadId);

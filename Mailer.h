@@ -113,7 +113,7 @@ public:
         // recipient list, otherwise false.
         // recipient_type must be in the range Mailer::TO -> Mailer::BCC if
         // not recipient_type defaults to BCC (blind copy), see const enum below.
-        bool addrecipient(const std::string& newrecipient, short recipient_type = Bcc /*TO, CC, BCC*/);
+        bool addrecipient(const std::string& newrecipient, short recipient_type = TO /*TO, CC, Bcc*/);
 
         // remove a recipient from the recipient list.
         // returns true if the address could be removed from the

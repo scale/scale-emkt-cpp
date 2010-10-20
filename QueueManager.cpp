@@ -87,7 +87,7 @@ bool QueueManager::returnQueue(){
 			em2.id_error = 850;
 			debug->debug("Excluindo os que ficaram na fila a mais do que o tempo limite");
 		    try{
-				Pointer p2(s_CI,"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' order by email",id_peca,id_campanha);
+				Pointer p2(s_CI,"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",id_peca,id_campanha);
 				while(p2.next()){
 					string email = p2.get("email");
 					statsInsert(email.c_str(),850);
@@ -96,7 +96,6 @@ bool QueueManager::returnQueue(){
 				}
 			
 			debug->debug("MUITOS DIAS DE FILA: Camp. %d / Peca %d",id_campanha,id_peca);
-			//database->executeQuery("delete from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d'",id_peca,id_campanha);
 		    } catch(DBException dbe){
 		    	debug->warn("QM :: EMail muito tempo de fila err: \n%s\n\n\n",dbe.err_description.c_str());
 		    }
@@ -116,8 +115,6 @@ bool QueueManager::returnQueue(){
 void QueueManager::statsInsert(const char* email, int code){
 	Database db;
 	try{
-		//Debug::Syslog("QE :: replace into EmktStatsEnvio (id_peca,id_campanha,error_code,email,enviado) values ('%d','%d','%d','%s',now())",id_peca,id_campanha,code,email);
-					
 		db.executeQuery("replace into EmktStatsEnvio (id_peca,id_campanha,error_code,email,enviado) values ('%d','%d','%d','%s',now())",id_peca,id_campanha,code,email);
 
 	} catch(DBException dbe) {
@@ -125,18 +122,20 @@ void QueueManager::statsInsert(const char* email, int code){
 	} 
 }
 
-void QueueManager::statsInsert(const char* email, int code, int id_peca, int id_campanha){
+void QueueManager::statsInsert(const char* email, int code, const std::string& mensagem, int id_peca, int id_campanha){
 	Database db;
 	try{
-//		Debug::Syslog("QUERY DA VEZ: replace into EmktStatsEnvio "
-//				"(id_peca,id_campanha,error_code,email,enviado)"
-//				" values ('%d','%d','%d','%s',now())\n",
-//				id_peca,id_campanha,code,email);
-					
 		db.executeQuery("replace into EmktStatsEnvio "
 				"(id_peca,id_campanha,error_code,email,enviado)" 
 				" values ('%d','%d','%d','%s',now())",
 				id_peca,id_campanha,code,email);
+
+		if (code >= 550) {
+			db.executeQuery("insert ignore into EmktListaNegra values ('%s',%d,'%s') ",
+				email,
+				code,
+				mensagem.c_str() );
+		}
 
 	} catch(DBException dbe) {
 		throw dbe;
@@ -175,19 +174,13 @@ vDadosPessoa QueueManager::getEmails(int threadId){
 	try{
 	
 		Pointer pointer(QueueManager::s_CI,
-			"select *,substring(email,LOCATE('@',email)+1,200) as domain"
-			" from EmktFilaEnvioPeca where id_peca='%d' "
-			"and id_campanha='%d' and (stats='0') order"
-			" by email limit 0,%d",
-			id_peca,id_campanha,block_size);
-
-/*
-			"select *,substring(email,LOCATE('@',email)+1,200) as domain"
-			" from EmktFilaEnvioPeca where id_peca='%d' "
-			"and id_campanha='%d' and (stats='0') order"
-			" by substring(email,LOCATE('@',email)+1,200) limit 0,%d",
-			id_peca,id_campanha,block_size);
-*/
+			"select *,dominio(email) as domain "
+			"from EmktFilaEnvioPeca where id_peca='%d' "
+			"and id_campanha='%d' and (stats='0') "
+			"order by email limit 0,%d",
+			id_peca,
+			id_campanha,
+			block_size);
 
 
 		if(pointer.getTotal() < 1 ) {
@@ -196,14 +189,14 @@ vDadosPessoa QueueManager::getEmails(int threadId){
 			pointer.query(
 				"select "
 				"*, " 
-				"substring(email,LOCATE('@',email)+1,200) as domain "
+				"dominio(email) as domain "
 				"from EmktFilaEnvioPeca "
 				"where "
 				"id_peca='%d' "
 				"and id_campanha='%d' "
 				"and (stats='0' or stats='2') "
 				"order by "
-				"substring(email,LOCATE('@',email)+1,200) "
+				"dominio(email) "
 				"limit 0,%d",
 				id_peca,id_campanha,block_size);
 

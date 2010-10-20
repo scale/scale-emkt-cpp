@@ -109,8 +109,6 @@ void* PecaHandler::Run(void* param){
 					esTemp[vez].id_peca     = id_peca;
 					esTemp[vez].id_campanha = id_campanha;
 
-
-					//debug->debug("PH[%d]::Run -- Iniciando Sender",id_peca);
 					sender[vez] = new Sender(vez);
 					if(!sender[vez]->setEmailSouces(esTemp[vez])){
 						//debug->debug("PH[%d]::Run -- problemas aoadcionar os sources do email", id_peca);					

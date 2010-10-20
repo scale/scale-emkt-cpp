@@ -243,7 +243,7 @@
 		string emails_validos;
 		if(em.id_error < 300 && em.id_error > 0) { //sucessno envio, verificar se todos usuarios eram validos
 			for(unsigned int x = 0; x < em.id_email_error.size(); x++){
-				QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], id_peca, id_campanha);
+				QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);
 				QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca, id_campanha);
 
 			    debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ",em.id_error, (em.emails_error[x]).c_str(), id_campanha, id_peca);
@@ -251,7 +251,7 @@
 		} else if(em.id_error < 500 && em.id_error > 0){ //erro ao enviar porem o erro temporario
 			for(unsigned int x = 0; x < em.id_email_error.size(); x++){
 				if(em.id_email_error[0] > 500)	{
-					QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], id_peca, id_campanha);
+					QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);
 					QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca, id_campanha);
 
 				    debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ",em.id_error, (em.emails_error[x]).c_str(), id_campanha, id_peca);
@@ -262,7 +262,7 @@
 		} else if(em.id_error > 0) {  //erro grave o email nao foi entregue e deve sair da fila
 
 			for(unsigned int x = 0; x < em.id_email_error.size(); x++){
-				QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], id_peca, id_campanha);
+				QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);
 				QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca, id_campanha);
 			    debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ",em.id_error, (em.emails_error[x]).c_str(), id_campanha, id_peca);
 			}

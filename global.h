@@ -33,11 +33,8 @@ extern "C" {
 
 using namespace std;
 
-// #define MAX_THREADS_PECA 50
-// #define MAX_THREADS_ENVIO 300
-
-#define MAX_THREADS_PECA 20
-#define MAX_THREADS_ENVIO 20
+#define MAX_THREADS_PECA 2
+#define MAX_THREADS_ENVIO 2
 #define TOTAL_EMAIL 1
 
 typedef vector<string> vString;
