@@ -12,6 +12,7 @@
 #include "QueueManager.h"
 #include "unistd.h"
 #include <iostream>
+#include <map>
 using namespace std; 
 
 
@@ -19,6 +20,7 @@ void* PecaHandler::Run(void* param){
 
 	debug->debug("PecaHandler[%d]::Run", id_peca);
 	Sender* sender[MAX_THREADS_ENVIO]; 
+	map<const char *, Sender> mapSenders;
 	QueueManager qm(&s_CI, id_peca, id_campanha, TOTAL_EMAIL);
 	
 	int num_threads = 0; //Numero de threads rodando
