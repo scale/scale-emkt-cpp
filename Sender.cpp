@@ -173,7 +173,7 @@
 		em.message_error = mail->getErrorMessages().message_error;
 		em.id_error = mail->getErrorMessages().id_error;
 
-		trantandoErros(em, es.id_peca, es.id_campanha);
+		tratandoErros(em, es.id_peca, es.id_campanha);
 
 		} catch (ErrorMessages_t __exception) {
 			cerr << "ERR: " << __exception.message_error << " (" << hex << this << ")" << endl;
@@ -238,9 +238,10 @@
 	}
 
 
-	void* Sender::trantandoErros(ErrorMessages_t em, int id_peca, int id_campanha){
-		Debug debug(1,"Inicio");
+	void* Sender::tratandoErros(ErrorMessages_t em, int id_peca, int id_campanha){
+		Debug debug(1,"Sender");
 		string emails_validos;
+
 		if(em.id_error < 300 && em.id_error > 0) { //sucessno envio, verificar se todos usuarios eram validos
 			for(unsigned int x = 0; x < em.id_email_error.size(); x++){
 				QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);

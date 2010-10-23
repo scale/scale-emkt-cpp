@@ -33,7 +33,7 @@ char* DNS::GetDomain(const std::string& email) {
 }
 
 
-bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
+bool DNS::GetMX(std::vector<string>& adds) {
         adds.clear(); // be safe in case of my utter stupidity
 
         sockaddr_in addr;
@@ -76,8 +76,12 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
 
                 memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
 
-                adds.push_back(addr);
-		//std::cout << "sucesso " << host->h_addr << std::endl;
+                char *p = host->h_addr;
+                while (*p) {
+                	adds.push_back(p);
+                	p++;
+                }
+                // adds.push_back(addr);
                 return true;
         }
         else
@@ -217,7 +221,14 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
                                                 continue; // just skip it!!!
                                         }
                                         memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
-                                        adds.push_back(addr);
+
+                                        char *p = host->h_addr;
+                                        while (*p) {
+                                        	adds.push_back(p);
+                                        	p++;
+                                        }
+
+//                                        adds.push_back(addr);
                                 }
                                 // got the addresses
                                 return true;

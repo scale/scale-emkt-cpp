@@ -16,6 +16,8 @@
 #include "Mailer.h"
 #include "Database.h"
 
+#include <map>
+
 class PecaHandler : public Thread {
 
 public:
@@ -34,6 +36,7 @@ private:
 	Debug* debug;
 	string DNS;
 
+	map<string, vector<string> > servidoresMX;
 };
 
 

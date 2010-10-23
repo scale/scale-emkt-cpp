@@ -12,7 +12,6 @@
 #include "QueueManager.h"
 #include "unistd.h"
 #include <iostream>
-#include <map>
 using namespace std;
 
 
@@ -70,6 +69,17 @@ void* PecaHandler::Run(void* param){
 			debug->info("Nao ha pecas para campanha %d!", id_campanha);
 			return NULL;
 
+		}
+
+		DNS _dns(DNS);
+		Pointer pointer(s_CI,"select distinct dominio(email) as dominio from EmktPeca where id_peca=%d and id_campanha=%d ", id_peca,id_campanha);
+		while (pointer.next()) {
+			vector<string> dd;
+			string domain = pointer.get("dominio");
+
+			_dns.GetMX(dd);
+			debug->debug("Num. MX para %s: %d", domain.c_str(), dd.size() );
+			servidoresMX[domain] = dd;
 		}
 	} catch(DBException dbe) {
 		debug->error("%s", dbe.err_description.c_str());

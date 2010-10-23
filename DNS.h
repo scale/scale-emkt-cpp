@@ -25,7 +25,7 @@ public:
 	virtual ~DNS();
 
 	static char* GetDomain(const std::string& email);
-	bool GetMX(std::vector<sockaddr_in>& adds);
+	bool GetMX(std::vector<string>& adds);
 
 private:
     void parsename(int& pos, const unsigned char dns[], std::string& name);

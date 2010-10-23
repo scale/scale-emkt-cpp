@@ -53,7 +53,7 @@ public:
 	~Sender();
 	ErrorMessages_t* getErrorMessages();
 	bool setEmailSouces(emailSource_t& emailsources);
-	void* trantandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
+	void* tratandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
 
 private:
 	virtual void* Run(void*);
