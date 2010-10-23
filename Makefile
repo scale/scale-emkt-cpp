@@ -15,7 +15,7 @@ CXXFLAGS = -g -W -Wall -O2 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
 LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -lssl -lcrypto 
 
 OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) ErrorPop.$(O) \
-     Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) \
+     Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) DNS.$(O) \
      QuotedPrintable.$(O) Sender.$(O) Thread.$(O) binaryblock.$(O) \
      socket_err.$(O) emkt.$(O) 
 

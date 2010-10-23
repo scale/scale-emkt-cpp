@@ -17,7 +17,12 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef LINUX
 #include <asm/errno.h>
+#else
+#include <errno.h>
+#endif
+
 
 #ifdef  __cplusplus
 }
@@ -33,8 +38,8 @@ extern "C" {
 
 using namespace std;
 
-#define MAX_THREADS_PECA 2
-#define MAX_THREADS_ENVIO 2
+#define MAX_THREADS_PECA 1
+#define MAX_THREADS_ENVIO 200
 #define TOTAL_EMAIL 1
 
 typedef vector<string> vString;
