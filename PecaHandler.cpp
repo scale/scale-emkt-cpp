@@ -112,6 +112,12 @@ void* PecaHandler::Run(void* param) {
 						string mx = (*itv).second;
 						Sender sender = mapSenders[mx];
 
+                        if (sender.getStatus() == 0) {
+                            mxs.erase(itv);
+                            continue;
+                        }
+
+                        sender.
 					}
 				}
 				++it;

@@ -32,7 +32,45 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="main.cpp" />
+		<Unit filename="Base64.cpp" />
+		<Unit filename="DNS.cpp" />
+		<Unit filename="DNS.h" />
+		<Unit filename="Database.cpp" />
+		<Unit filename="Database.h" />
+		<Unit filename="Date.cpp" />
+		<Unit filename="Date.h" />
+		<Unit filename="Debug.cpp" />
+		<Unit filename="Debug.h" />
+		<Unit filename="Encoder.cpp" />
+		<Unit filename="Encoder.h" />
+		<Unit filename="ErrorPop.cpp" />
+		<Unit filename="ErrorPop.h" />
+		<Unit filename="Mailer.cpp" />
+		<Unit filename="Mailer.h" />
+		<Unit filename="Makefile" />
+		<Unit filename="Mutex.cpp" />
+		<Unit filename="Mutex.h" />
+		<Unit filename="Peca.cpp" />
+		<Unit filename="Peca.h" />
+		<Unit filename="PecaHandler.cpp" />
+		<Unit filename="PecaHandler.h" />
+		<Unit filename="Pointer.cpp" />
+		<Unit filename="Pointer.h" />
+		<Unit filename="QueueManager.cpp" />
+		<Unit filename="QueueManager.h" />
+		<Unit filename="QuotedPrintable.cpp" />
+		<Unit filename="QuotedPrintable.h" />
+		<Unit filename="Sender.cpp" />
+		<Unit filename="Sender.h" />
+		<Unit filename="Thread.cpp" />
+		<Unit filename="Thread.h" />
+		<Unit filename="base64.h" />
+		<Unit filename="binaryblock.cpp" />
+		<Unit filename="binaryblock.h" />
+		<Unit filename="emkt.cpp" />
+		<Unit filename="global.h" />
+		<Unit filename="procmailemkt.cpp" />
+		<Unit filename="socket_err.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
