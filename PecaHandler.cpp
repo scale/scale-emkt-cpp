@@ -14,12 +14,13 @@
 #include <iostream>
 using namespace std;
 
-
-void* PecaHandler::Run(void* param){
+void* PecaHandler::Run(void* param) {
 
 	debug->debug("PecaHandler[%d]::Run", id_peca);
+
+	Peca peca;
 	Sender* sender[MAX_THREADS_ENVIO];
-	std::map<const char *, Sender> mapSenders;
+	map<string, Sender> mapSenders;
 	QueueManager qm(&s_CI, id_peca, id_campanha, TOTAL_EMAIL);
 
 	int num_threads = 0; //Numero de threads rodando
@@ -27,9 +28,10 @@ void* PecaHandler::Run(void* param){
 
 	emailSource_t esTemp[MAX_THREADS_ENVIO];
 
-	for(int i = 0; i < MAX_THREADS_ENVIO; i++) sender[i] = NULL;
+	for (int i = 0; i < MAX_THREADS_ENVIO; i++)
+		sender[i] = NULL;
 
-	int queueId = 0 ;
+	int queueId = 0;
 	int status_running = MAX_THREADS_ENVIO;
 
 	vector<ErrorMessages_t> vErrorMessages;
@@ -37,31 +39,26 @@ void* PecaHandler::Run(void* param){
 
 	ErrorMessages_t erro_vez;
 
-	try{
-		Pointer pointer(s_CI,"select * from EmktPeca where id_peca=%d and id_campanha=%d ", id_peca,id_campanha);
-		if(pointer.next()){
-			es.from = pointer.get("email_resposta");
-			es.subject = pointer.get("subject");
-			es.body_txt = pointer.get("corpoTXT");
-			es.body_html = pointer.get("corpoHTML");
-			es.body_html += " ";
-			es.errors_to = pointer.get("errors_to");
+	try {
+		Pointer pointer(s_CI,
+				"select * from EmktPeca where id_peca=%d and id_campanha=%d ",
+				id_peca, id_campanha);
+		if (pointer.next()) {
+			peca.from = pointer.get("email_resposta");
+			peca.subject = pointer.get("subject");
+			peca.txt = pointer.get("corpoTXT");
+			peca.html = pointer.get("corpoHTML");
+			peca.html += " ";
 
+			peca.campanhaId = id_campanha;
+			peca.pecaId = pecaId;
 
-			if(DNS.size() > 3)
-				es.DNS = DNS;
-			else
-				es.DNS = "127.0.0.1";
-
-
-			es.id_camp_peca = pointer.get("id_campanha");
-			es.id_camp_peca += ".";
-			es.id_camp_peca += pointer.get("id_peca");
-
-			es.id_peca = id_peca;
-			es.id_campanha = id_campanha;
-
-			debug->debug("PH[%d]::Run --Peca:%s  Email Resposta: %s / Subject: %s", id_peca, es.id_camp_peca.c_str(), es.from.c_str(), es.subject.c_str() );
+			debug->debug(
+					"Peca:%d/%d  Email Resposta: %s / Subject: %s",
+						peca.campanhaId,
+						peca.pecaId,
+						peca.from.c_str(),
+						peca.subject.c_str());
 
 		} else {
 			Sender* running = 0;
@@ -72,95 +69,130 @@ void* PecaHandler::Run(void* param){
 		}
 
 		DNS _dns(DNS);
-		Pointer pointer(s_CI,"select distinct dominio(email) as dominio from EmktPeca where id_peca=%d and id_campanha=%d ", id_peca,id_campanha);
+		Pointer
+				pointer(
+						s_CI,
+						"select distinct dominio(email) as dominio from EmktPeca where id_peca=%d and id_campanha=%d ",
+						id_peca, id_campanha);
 		while (pointer.next()) {
-			vector<string> dd;
+			vector < string > vdd;
 			string domain = pointer.get("dominio");
 
-			_dns.GetMX(dd);
-			debug->debug("Num. MX para %s: %d", domain.c_str(), dd.size() );
-			servidoresMX[domain] = dd;
+			_dns.GetMX(ddv);
+			debug->debug("Num. MX para %s: %d", domain.c_str(), vdd.size());
+			servidoresMX[domain] = vdd;
 		}
-	} catch(DBException dbe) {
+	} catch (DBException dbe) {
 		debug->error("%s", dbe.err_description.c_str());
 		throw dbe;
 	}
 	// Iniciando o procedimentos para comecar o envio!
 	int finalizar = 0;
-	while(status_running > 0){
+	while (status_running > 0) {
 
-	  for(vez = 0; vez < MAX_THREADS_ENVIO; vez++){
-	    //este qm.ad deve morrer mas antes passar o "relatorio" do envio
-		if( sender[vez] != NULL && sender[vez]->getStatus() == 0){
-			//debug->Syslog("PH :: ACABOU A THREAD_ID %d",vez);
-			delete(sender[vez]);
-			sender[vez] = NULL;
+		map<string, vector<string>>::iterator it;
 
-		}
+		for(it = servidoresMX.begin(); it != servidoresMX.end(); ) {
+			string domain = (*it).first;
+			vector<string> mxs = (*it).second;
 
-		if( sender[vez] == NULL) {
-			//debug->Syslog("PH :: CRIANDO A THREAD_ID %d",vez);
-			esTemp[vez].to = qm.getEmails(vez);
+			Pointer pointer(
+					s_CI,
+					"select * from EmktFilaEnvioPeca where id_peca=%d and id_campanha=%d and dominio(email) ='%s' ",
+					id_peca, id_campanha, domain);
 
-			if(esTemp[vez].to.size() < 1){
-				//debug->debug("PH[%d]::Run -- Hora de finalizar a peca nao ha mais emails na fila!",id_peca);
-				finalizar = 1;
-				break;
-			}
+			if (pointer.total_record_set == 0) {
+				servidoresMX.erase(it++);
+			} else {
+				debug->debug("%d emails na fila para: %s", pointer.total_record_set, domain);
 
-			mutex.Acquire();
-			if(status_running){
-				if(esTemp[vez].to.size() > 0) {
+				while (pointer.next()) {
+					for (vector<string>::iterator itv = mxs.begin; itv != mxs.end; ++itv) {
+						string mx = (*itv).second;
+						Sender sender = mapSenders[mx];
 
-					esTemp[vez].from        = es.from;
-					esTemp[vez].subject     = es.subject;
-					esTemp[vez].body_txt    = es.body_txt;
-					esTemp[vez].body_html   = es.body_html;
-					esTemp[vez].errors_to   = es.errors_to;
-					esTemp[vez].DNS         = es.DNS;
-					esTemp[vez].id_peca     = id_peca;
-					esTemp[vez].id_campanha = id_campanha;
-
-					sender[vez] = new Sender(vez);
-					if(!sender[vez]->setEmailSouces(esTemp[vez])){
-						//debug->debug("PH[%d]::Run -- problemas aoadcionar os sources do email", id_peca);
 					}
-
-					sender[vez]->Start();
 				}
+				++it;
 			}
-			mutex.Release();
-
 		}
 
-		sleep(3);
+		for (vez = 0; vez < MAX_THREADS_ENVIO; vez++) {
+			//este qm.ad deve morrer mas antes passar o "relatorio" do envio
+			if (sender[vez] != NULL && sender[vez]->getStatus() == 0) {
+				//debug->Syslog("PH :: ACABOU A THREAD_ID %d",vez);
+				delete (sender[vez]);
+				sender[vez] = NULL;
 
-	  } // FIM FOR
+			}
 
-		if(finalizar > 0){
-			debug->debug("PH[%d]::Run -- Finalizando peca",id_peca);
+			if (sender[vez] == NULL) {
+				//debug->Syslog("PH :: CRIANDO A THREAD_ID %d",vez);
+				esTemp[vez].to = qm.getEmails(vez);
+
+				if (esTemp[vez].to.size() < 1) {
+					//debug->debug("PH[%d]::Run -- Hora de finalizar a peca nao ha mais emails na fila!",id_peca);
+					finalizar = 1;
+					break;
+				}
+
+				mutex.Acquire();
+				if (status_running) {
+					if (esTemp[vez].to.size() > 0) {
+
+						esTemp[vez].from = es.from;
+						esTemp[vez].subject = es.subject;
+						esTemp[vez].body_txt = es.body_txt;
+						esTemp[vez].body_html = es.body_html;
+						esTemp[vez].errors_to = es.errors_to;
+						esTemp[vez].DNS = es.DNS;
+						esTemp[vez].id_peca = id_peca;
+						esTemp[vez].id_campanha = id_campanha;
+
+						sender[vez] = new Sender(vez);
+						if (!sender[vez]->setEmailSouces(esTemp[vez])) {
+							//debug->debug("PH[%d]::Run -- problemas aoadcionar os sources do email", id_peca);
+						}
+
+						sender[vez]->Start();
+					}
+				}
+				mutex.Release();
+
+			}
+
+			sleep(3);
+
+		} // FIM FOR
+
+		if (finalizar > 0) {
+			debug->debug("PH[%d]::Run -- Finalizando peca", id_peca);
 			break;
 		}
 
 	}//FIM Do WHILE
 
-	try{
-	  	Database database(s_CI);
-		debug->info("Finalizando Peca: id_campanha='%d', id_peca='%d'", id_campanha,id_peca);
-		database.executeQuery("update EmktPeca set stats=2 where id_peca='%d' and id_campanha='%d'", id_peca, id_campanha);
-	} catch(DBException dbe) {
-		debug->error("PH[%d]::DBException:: %s", id_peca, dbe.err_description.c_str());
+	try {
+		Database database(s_CI);
+		debug->info("Finalizando Peca: id_campanha='%d', id_peca='%d'",
+				id_campanha, id_peca);
+		database.executeQuery(
+				"update EmktPeca set stats=2 where id_peca='%d' and id_campanha='%d'",
+				id_peca, id_campanha);
+	} catch (DBException dbe) {
+		debug->error("PH[%d]::DBException:: %s", id_peca,
+				dbe.err_description.c_str());
 
 	}
 
-	debug->debug("PH[%d]::Run -- Fim",id_peca);
+	debug->debug("PH[%d]::Run -- Fim", id_peca);
 	setRunning(false);
 	return NULL;
 
 }
 
-
-PecaHandler::PecaHandler(int id, Connection_Info_t ci, int peca, int campanha, int total_emails){
+PecaHandler::PecaHandler(int id, Connection_Info_t ci, int peca, int campanha,
+		int total_emails) {
 	mutex.Acquire();
 	SetThreadID(id);
 	s_CI = ci;
@@ -169,17 +201,17 @@ PecaHandler::PecaHandler(int id, Connection_Info_t ci, int peca, int campanha, i
 	this->total_emails = total_emails;
 
 	DNS = "";
-	debug = new Debug(1,"PecaHandler");
+	debug = new Debug(1, "PecaHandler");
 
-	debug->debug("PH[%d]::Run -- Id_campanha = %d / Id_peca = %d ",id_peca,id_campanha,id_peca);
+	debug->debug("PH[%d]::Run -- Id_campanha = %d / Id_peca = %d ", id_peca,
+			id_campanha, id_peca);
 
 	mutex.Release();
 }
 
-
-PecaHandler::~PecaHandler(){
-	if(debug != NULL){
-		delete(debug);
+PecaHandler::~PecaHandler() {
+	if (debug != NULL) {
+		delete (debug);
 		debug = NULL;
 
 	}
@@ -188,7 +220,7 @@ PecaHandler::~PecaHandler(){
 
 }
 
-void PecaHandler::setDNS(string dns){
+void PecaHandler::setDNS(string dns) {
 	DNS = dns;
 }
 

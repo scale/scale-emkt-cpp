@@ -15,6 +15,7 @@
 #include "Sender.h"
 #include "Mailer.h"
 #include "Database.h"
+#include "Peca.h"
 
 #include <map>
 
