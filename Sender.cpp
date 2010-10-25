@@ -22,6 +22,8 @@
 	{
 		Debug debug(1,"Sender");
 
+		setRunning(true);
+
 		if( es.to.size() <= 0 ){
 			setRunning(false);
 			debug.error("ERRO: Vetor 'To' vazio?");
@@ -165,11 +167,12 @@
 			mail->send();
 			cerr << "OK" << endl;
 
-		for(unsigned int x = 0; x < mail->getErrorMessages().emails_error.size(); x++){
+		for (unsigned int x = 0; x < mail->getErrorMessages().emails_error.size(); x++) {
 			em.emails_error.push_back(mail->getErrorMessages().emails_error[x]);
 			em.id_email_error.push_back(mail->getErrorMessages().id_email_error[x]);
 			debug.error("%d %s", mail->getErrorMessages().id_email_error[x], mail->getErrorMessages().emails_error[x].c_str());
 		}
+
 		em.message_error = mail->getErrorMessages().message_error;
 		em.id_error = mail->getErrorMessages().id_error;
 
@@ -190,10 +193,13 @@
 	}
 
 
-	Sender::Sender(int status){
+	Sender::Sender(const Peca& peca){
 		mutex.Acquire();
-		SetThreadID(status);
+		SetThreadID(maxId++);
 		mutex.Release();
+
+		this.peca = peca;
+		setRunning(false);
 	}
 
 

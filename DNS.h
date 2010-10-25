@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 /*
  * DNS.h
  *

@@ -88,6 +88,7 @@ void* PecaHandler::Run(void* param) {
 	}
 	// Iniciando o procedimentos para comecar o envio!
 	int finalizar = 0;
+
 	while (status_running > 0) {
 
 		map<string, vector<string>>::iterator it;
@@ -156,6 +157,7 @@ void* PecaHandler::Run(void* param) {
 
 						sender[vez]->Start();
 					}
+
 				}
 				mutex.Release();
 

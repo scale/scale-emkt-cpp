@@ -10,16 +10,16 @@ BINDIR=$(BASENAME)/emkt
 INSTALL=install -o root -m
 BINPERM=02755 -s -g root
 
-CFLAGS	= -g -W -Wall -O2 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"' 
+CFLAGS	= -g -W -Wall -O2 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"'
 CXXFLAGS = -g -W -Wall -O2 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
-LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -lssl -lcrypto 
+LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -lssl -lcrypto
 
 OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) ErrorPop.$(O) \
      Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) DNS.$(O) \
      QuotedPrintable.$(O) Sender.$(O) Thread.$(O) binaryblock.$(O) \
-     socket_err.$(O) emkt.$(O) 
+     socket_err.$(O) emkt.$(O)
 
-SRCS=$(OBJS,.o=.cpp) 
+SRCS=$(OBJS,.o=.cpp)
 
 BINS=emkt.exe
 
@@ -32,13 +32,13 @@ emkt.exe: $(OBJS)
 	$(CC) -o $@ $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS)
 
 .o.c:
-	@echo "  CC $@" ; ${CC} $(CFLAGS)  -c $< 
+	@echo "  CC $@" ; ${CC} $(CFLAGS)  -c $<
 
 ${OBJS}: ${SRCS}
 
 
 
-install: $(BINS) 
+install: $(BINS)
 	strip $(BINS)
 	$(INSTALL) $(BINPERM) $(BINS) $(BINDIR)
 

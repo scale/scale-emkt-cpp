@@ -16,24 +16,29 @@
 #include "Debug.h"
 #include "global.h"
 #include "QueueManager.h"
+#include "Peca.h"
 
 
 class Sender : public Thread {
 
 public:
-	Sender(int status);
+	Sender(const Peca& peca);
 	~Sender();
 
 	ErrorMessages_t* getErrorMessages();
 	bool setEmailSouces(emailSource_t& emailsources);
 	void* tratandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
+	static int maxId() { return maxId; };
 
 private:
 	virtual void* Run(void*);
+
 	int id;
+	Peca peca;
 	Mutex mutex;
 	ErrorMessages_t em;
 
+    static int maxId;
 };
 
 
