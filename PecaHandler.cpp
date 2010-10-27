@@ -72,7 +72,7 @@ void* PecaHandler::Run(void* param) {
 		Pointer
 				pointer(
 						s_CI,
-						"select distinct dominio(email) as dominio from EmktPeca where id_peca=%d and id_campanha=%d ",
+						"select distinct dominio(email) as dominio from EmktFilaEnvioPeca where id_peca=%d and id_campanha=%d ",
 						id_peca, id_campanha);
 		while (pointer.next()) {
 			vector < string > vdd;
@@ -82,6 +82,7 @@ void* PecaHandler::Run(void* param) {
 			debug->debug("Num. MX para %s: %d", domain.c_str(), vdd.size());
 			servidoresMX[domain] = vdd;
 		}
+
 	} catch (DBException dbe) {
 		debug->error("%s", dbe.err_description.c_str());
 		throw dbe;
@@ -108,7 +109,7 @@ void* PecaHandler::Run(void* param) {
 				debug->debug("%d emails na fila para: %s", pointer.total_record_set, domain);
 
 				while (pointer.next()) {
-					for (vector<string>::iterator itv = mxs.begin; itv != mxs.end; ++itv) {
+					for (vector<string>::iterator itv = mxs.begin(); itv != mxs.end(); ++itv) {
 						string mx = (*itv).second;
 						Sender sender = mapSenders[mx];
 
@@ -232,3 +233,56 @@ void PecaHandler::setDNS(string dns) {
 	DNS = dns;
 }
 
+void* PecaHandler::tratarErros(ErrorMessages_t em, int id_peca, int id_campanha) {
+	string emails_validos;
+
+	if (em.id_error < 300 && em.id_error > 0) { //sucessno envio, verificar se todos usuarios eram validos
+		for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+			QueueManager::statsInsert((em.emails_error[x]).c_str(),
+					em.id_email_error[x], em.message_error, id_peca,
+					id_campanha);
+			QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca,
+					id_campanha);
+
+			debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ", em.id_error,
+					(em.emails_error[x]).c_str(), id_campanha, id_peca);
+		}
+	} else if (em.id_error < 500 && em.id_error > 0) { //erro ao enviar porem o erro temporario
+		for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+			if (em.id_email_error[0] > 500) {
+				QueueManager::statsInsert((em.emails_error[x]).c_str(),
+						em.id_email_error[x], em.message_error, id_peca,
+						id_campanha);
+				QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca,
+						id_campanha);
+
+				debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ", em.id_error,
+						(em.emails_error[x]).c_str(), id_campanha, id_peca);
+			} else {
+				emails_validos += ",'" + em.emails_error[x] + "'";
+			}
+		}
+	} else if (em.id_error > 0) { //erro grave o email nao foi entregue e deve sair da fila
+
+		for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+			QueueManager::statsInsert((em.emails_error[x]).c_str(),
+					em.id_email_error[x], em.message_error, id_peca,
+					id_campanha);
+			QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca,
+					id_campanha);
+			debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ", em.id_error,
+					(em.emails_error[x]).c_str(), id_campanha, id_peca);
+		}
+
+	} else {
+		for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+			emails_validos += ",'" + em.emails_error[x] + "'";
+		}
+	}
+
+	if (emails_validos.size() > 5) {
+		QueueManager::returnQueue(emails_validos.c_str());
+	}
+
+	return NULL;
+}

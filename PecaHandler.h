@@ -28,6 +28,8 @@ public:
 
 private:
 	virtual void* Run(void*);
+	void* tratarErros(ErrorMessages_t em, int id_peca, int id_campanha)
+
 	int id;
 	Mutex mutex;
 	int id_peca;

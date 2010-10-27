@@ -935,24 +935,6 @@ Mailer::Address Mailer::parseaddress(const std::string& addresstoparse) {
 	return newaddress;
 }
 
-char* Mailer::getDomainEmail(const std::string& email) {
-
-	char* domain;
-	int pos = 0;
-	// do some silly checks
-	if (email.length() > 0) {
-		pos = email.find("@") + 1;
-		if (pos > 0) {
-			domain = (char*) malloc(email.length() + 1 - pos);
-			strcpy(domain, email.c_str() + pos);
-
-		}
-	}
-
-	return domain;
-
-}
-
 void Mailer::text(const std::string& text) {
 	body_text = text;
 

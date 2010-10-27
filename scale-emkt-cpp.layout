@@ -10,17 +10,23 @@
 	<File name="Makefile" open="0" top="0" tabpos="0">
 		<Cursor position="1140" topLine="21" />
 	</File>
+	<File name="Peca.cpp" open="1" top="0" tabpos="6">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Peca.h" open="1" top="0" tabpos="5">
+		<Cursor position="0" topLine="0" />
+	</File>
 	<File name="PecaHandler.cpp" open="1" top="0" tabpos="2">
-		<Cursor position="3411" topLine="95" />
+		<Cursor position="2991" topLine="97" />
 	</File>
 	<File name="PecaHandler.h" open="1" top="0" tabpos="1">
 		<Cursor position="0" topLine="0" />
 	</File>
-	<File name="Sender.cpp" open="1" top="1" tabpos="3">
-		<Cursor position="6848" topLine="221" />
+	<File name="Sender.cpp" open="1" top="0" tabpos="3">
+		<Cursor position="4649" topLine="119" />
 	</File>
-	<File name="Sender.h" open="1" top="0" tabpos="4">
-		<Cursor position="1045" topLine="0" />
+	<File name="Sender.h" open="1" top="1" tabpos="4">
+		<Cursor position="1456" topLine="18" />
 	</File>
 	<File name="Thread.h" open="0" top="0" tabpos="0">
 		<Cursor position="1442" topLine="33" />

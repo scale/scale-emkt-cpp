@@ -24,13 +24,6 @@ typedef int SOCKET; // get round windows definitions.
 #include <string>
 #include "Debug.h"
 
-typedef struct ErrorMessages {
-	std::vector<std::string> emails_error;
-	std::vector<int> id_email_error;
-	std::string message_error;
-	int id_error;
-} ErrorMessages_t;
-
 class Mailer {
 
 public:
@@ -86,10 +79,6 @@ public:
 	// see smtp RFC 821 section 4.2.2 for response codes.
 	const std::string& response() const;
 
-	//Para retornar o dominio a ser dado como EHLO, pegara o dominio do email que esta
-	// enviando o email
-	char* getDomainEmail(const std::string& email);
-
 	//Para inserir o conteudo TEXT
 	void text(const char* text);
 	//Para inserir o conteudo HTML
@@ -125,32 +114,12 @@ private:
 	// returns false on failure, true on success
 	bool gethostaddresses(std::vector<sockaddr_in>& adds);
 
-	// Parses a dns Resource Record (see TCP/IP illustrated, STEVENS, page 194)
-	bool parseRR(int& pos, const unsigned char dns[], std::string& name,
-			in_addr& address);
-
-	// Parses a dns name returned in a dns query (see TCP/IP illustrated, STEVENS, page 192)
-	void parsename(int& pos, const unsigned char dns[], std::string& name);
-
 	// initialises winsock in win32, does nothing in unix (a definate snore function)
 	void init() const;
 
 	// wrapper for closesocket...windows & close...unix
 	void Closesocket(const SOCKET& s);
 
-	// email address wrapper struct
-	struct Address {
-		std::string name; // e.g.   freddy foobar
-		std::string address; // e.g.   someone@mail.com
-	};
-
-	// less typing later, these are definately abominations!
-	typedef std::vector<std::pair<std::vector<char>, std::string> >::const_iterator
-			vec_pair_char_str_const_iter;
-	typedef std::vector<std::pair<Address, short> >::const_iterator
-			recipient_const_iter;
-	typedef std::vector<std::pair<Address, short> >::iterator recipient_iter;
-	typedef std::vector<std::string>::const_iterator vec_str_const_iter;
 
 	// split an address into its relevant parts i.e.
 	// name and actual address and return it in Address.

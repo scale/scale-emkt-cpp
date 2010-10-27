@@ -18,29 +18,38 @@
 #include "QueueManager.h"
 #include "Peca.h"
 
-
-class Sender : public Thread {
+class Sender: public Thread {
 
 public:
-	Sender(const Peca& peca);
-	~Sender();
+	Sender(const std::string& server, const Peca& peca) {
+		this->peca = peca;
+		this->server = server;
+		setRunning(false);
+	}
 
-	ErrorMessages_t* getErrorMessages();
-	bool setEmailSouces(emailSource_t& emailsources);
+	~Sender() {
+		Stop();
+	}
+
+	ErrorMessages_t* getErrorMessages() {
+		return &em;
+	}
+
+	void Sender::Recipient(const vector<Address>& rcpt);
 	void* tratandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
-	static int maxId() { return maxId; };
 
 private:
 	virtual void* Run(void*);
 
 	int id;
 	Peca peca;
+	std::vector<Address> recipients;
+	std::string server;
 	Mutex mutex;
 	ErrorMessages_t em;
 
-    static int maxId;
+	bool active;
 };
-
 
 #endif
 
