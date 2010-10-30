@@ -13,64 +13,26 @@
 #include <sstream>
 
 
-QueueManager::QueueManager(Connection_Info_t* s_ConInfo, int peca, int campanha, int total_emails, int tpeca){
-	
-	s_CI.host = s_ConInfo->host;
-	s_CI.user = s_ConInfo->user;
-	s_CI.pass = s_ConInfo->pass;
-	s_CI.db   = s_ConInfo->db;
-	
-	Database::host = s_ConInfo->host.c_str();
-	Database::user = s_ConInfo->user.c_str();
-	Database::pass = s_ConInfo->pass.c_str();
-	Database::db   = s_ConInfo->db.c_str();
-
-	database = new Database(s_CI);
-	block_size = total_emails;
-	
-	id_peca = peca;
-	id_campanha = campanha;
-
-	tipo_peca = tpeca;
-
-	debug = new Debug(1,"QueueManager");
-
-
+QueueManager::QueueManager() : database(conn) {
 	
 }
 
-QueueManager::~QueueManager(){
-	if( database != NULL ){
-		delete(database);
-		database = NULL;
-	}
-	if( debug != NULL){
-		delete(debug);
-		debug = NULL;
-	}
-
+QueueManager::~QueueManager() {
+	Stop();
 }
 
+void* QueueManager::Run(void* param) {
 
-bool QueueManager::returnQueue(const char* email){
-	
-	Database* db = new Database();
-	try{
-		if(strlen(email) > 0) {
-			db->executeQuery("update EmktFilaEnvioPeca set stats='2',id_thread=50 where email in ('1'%s)", email);
-		}
-	} catch(DBException dbe) {
-		throw dbe;
+	while (1) {
+
+		debug.info("Queueing...");
+		sleep(30);
 	}
-
-	delete(db);
-	return true;
 }
 
 bool QueueManager::returnQueue(){
 
 	try{
-		MYSQL_RES* result;
 		result = database->select("select id_peca from EmktPeca where date_add(data_enviar, "
 						"INTERVAL 5 DAY) > now() and id_peca='%d' and"
 						" id_campanha='%d'",id_peca,id_campanha);
@@ -87,7 +49,7 @@ bool QueueManager::returnQueue(){
 			em2.id_error = 850;
 			debug->debug("Excluindo os que ficaram na fila a mais do que o tempo limite");
 		    try{
-				Pointer p2(s_CI,"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",id_peca,id_campanha);
+				Pointer p2(conn,"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",id_peca,id_campanha);
 				while(p2.next()){
 					string email = p2.get("email");
 					statsInsert(email.c_str(),850);
@@ -113,9 +75,10 @@ bool QueueManager::returnQueue(){
 
 
 void QueueManager::statsInsert(const char* email, int code){
-	Database db;
 	try{
-		db.executeQuery("replace into EmktStatsEnvio (id_peca,id_campanha,error_code,email,enviado) values ('%d','%d','%d','%s',now())",id_peca,id_campanha,code,email);
+		db.executeQuery("replace into EmktStatsEnvio "
+				"(id_peca,id_campanha,error_code,email,enviado) "
+				"values ('%d','%d','%d','%s',now())",id_peca,id_campanha,code,email);
 
 	} catch(DBException dbe) {
 		throw dbe;
@@ -123,7 +86,6 @@ void QueueManager::statsInsert(const char* email, int code){
 }
 
 void QueueManager::statsInsert(const char* email, int code, const std::string& mensagem, int id_peca, int id_campanha){
-	Database db;
 	try{
 		db.executeQuery("replace into EmktStatsEnvio "
 				"(id_peca,id_campanha,error_code,email,enviado)" 
@@ -144,7 +106,6 @@ void QueueManager::statsInsert(const char* email, int code, const std::string& m
 
 
 void QueueManager::eraseQueue(const char* email){
-	Database db(s_CI);
 	try{
 		db.executeQuery("delete from "
 						"EmktFilaEnvioPeca where "
@@ -173,7 +134,7 @@ vDadosPessoa QueueManager::getEmails(int threadId){
 
 	try{
 	
-		Pointer pointer(QueueManager::s_CI,
+		Pointer pointer(conn,
 			"select *,dominio(email) as domain "
 			"from EmktFilaEnvioPeca where id_peca='%d' "
 			"and id_campanha='%d' and (stats='0') "

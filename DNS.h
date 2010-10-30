@@ -32,6 +32,25 @@ private:
     void parsename(int& pos, const unsigned char dns[], std::string& name);
     bool parseRR(int& pos, const unsigned char dns[], std::string& name);
 
+	// helper function.
+	// returns the part of the string toaddress after the @ symbol.
+	// i.e. the 'toaddress' is an email address eg. someone@somewhere.com
+	// this function returns 'somewhere.com'
+	std::string getserveraddress(const std::string& toaddress) const;
+
+	// Does the work of getting MX records for the server returned by 'getserveraddress'
+	// will use the dns server passed to this's constructor in 'nameserver'
+	// or if MXlookup is false in the constuctor, will return an address
+	// for the server that 'getserveraddress' returns.
+	// returns false on failure, true on success
+	bool gethostaddresses(std::vector<sockaddr_in>& adds);
+
+	// split an address into its relevant parts i.e.
+	// name and actual address and return it in Address.
+	// this may be usefull out of the class maybe
+	// it should be a static function or a global? thinking about it.
+	Address parseaddress(const std::string& addresstoparse);
+
 	std::string server;
 };
 

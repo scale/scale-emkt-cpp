@@ -44,17 +44,26 @@ using namespace std;
 
 typedef vector<string> vString;
 
-typedef struct ErrorMessages {
-	std::vector<std::string> emails_error;
-	std::vector<int> id_email_error;
-	std::string message_error;
-	int id_error;
-} ErrorMessages_t;
+class ResultMessage {
+public:
+	Address recipient;
+	std::string message;
+	int error;
+};
 
 // email address wrapper struct
-struct Address {
+class Address {
+public:
+	std::string id;
 	std::string name; // e.g.   freddy foobar
-	std::string address; // e.g.   someone@mail.com
+	std::string email; // e.g.   someone@mail.com
+
+	Address & operator =( const Address &other) {
+		id = other.id;
+		name = other.name;
+		email = other.email;
+		return *this;
+	}
 };
 
 const char * get_socket_error(int err_no);

@@ -27,33 +27,15 @@ typedef int SOCKET; // get round windows definitions.
 class Mailer {
 
 public:
-	Mailer(const char* server = "127.0.0.1");
+	Mailer(const std::string& server = "127.0.0.1");
 	~Mailer();
 
-	// call this operator to have the mail mailed.
-	// This is to facilitate using multiple threads
-	// i.e. using boost::thread.     (see http://www.boost.org)
-
-	//
-	// e.g.
-	//    Mailer mail(args...);
-	//    boost::thread thrd(mail); // operator()() implicitly called.
-	//    thrd.join(); // if needed.
-	//
-	// or:
-	//    Mailer mail(args...);
-	//    mail.operator()();
 	void send();
 
-	// attach a file to the mail. (MIME 1.0)
-	// returns false if !filename.length() or
-	// the file could not be opened for reading...etc.
 	bool attach(const std::string& filename);
-
-	// remove an attachment from the list of attachments.
-	// returns false if !filename.length() or
-	// the file is not attached or there are no attachments.
 	bool removeattachment(const std::string& filename);
+	// clear all attachments from the mail.
+	void clearattachments();
 
 	// Set a new Subject for the mail (replacing the old)
 	// will return false if newSubject is empty.
@@ -62,16 +44,9 @@ public:
 	// sets the senders address (fromAddress variable)
 	void from(const std::string& from);
 
-	// add a recipient to the recipient list.
-	// returns true if the address could be added to the
-	// recipient list, otherwise false.
-	// recipient_type must be in the range Mailer::TO -> Mailer::BCC if
-	// not recipient_type defaults to BCC (blind copy), see const enum below.
 	void to(const std::string& name, const std::string& email);
 	void to(const struct Address& addr);
 
-	// clear all attachments from the mail.
-	void clearattachments();
 
 	// returns the return code sent by the smtp server or a local error.
 	// this is the only way to find if there is an error in processing.
@@ -87,11 +62,9 @@ public:
 	//Para devolver o struct que conetem os erros elvantados durante a entrea do email
 	ErrorMessages_t getErrorMessages();
 
-	void substitute(const std::string& name, const std::string value);
 
 private:
 
-	std::map<std::string, std::string> macros;
 
 	// create a header with current message and attachments.
 	std::string makesmtpmessage() const;
@@ -101,31 +74,10 @@ private:
 	// rfc821
 	void checklinesarelessthan1000chars();
 
-	// helper function.
-	// returns the part of the string toaddress after the @ symbol.
-	// i.e. the 'toaddress' is an email address eg. someone@somewhere.com
-	// this function returns 'somewhere.com'
-	std::string getserveraddress(const std::string& toaddress) const;
-
-	// Does the work of getting MX records for the server returned by 'getserveraddress'
-	// will use the dns server passed to this's constructor in 'nameserver'
-	// or if MXlookup is false in the constuctor, will return an address
-	// for the server that 'getserveraddress' returns.
-	// returns false on failure, true on success
-	bool gethostaddresses(std::vector<sockaddr_in>& adds);
-
 	// initialises winsock in win32, does nothing in unix (a definate snore function)
 	void init() const;
-
 	// wrapper for closesocket...windows & close...unix
-	void Closesocket(const SOCKET& s);
-
-
-	// split an address into its relevant parts i.e.
-	// name and actual address and return it in Address.
-	// this may be usefull out of the class maybe
-	// it should be a static function or a global? thinking about it.
-	Address parseaddress(const std::string& addresstoparse);
+	void closesocket(const SOCKET& s);
 
 	// The addresses to send the mail to
 	std::vector<std::pair<Address, short> > recipients;
@@ -151,7 +103,7 @@ private:
 	// quoted-printable funcao para converter
 	char * qpEncode(const char *sfrom, int fromlen, int *tolen = NULL);
 
-	ErrorMessages_t m_ErrorMessages;
+	std::vector<ResultMessage> mensagens;
 
 	// filled in with server return strings
 	std::string returnstring;

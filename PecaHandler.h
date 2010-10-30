@@ -22,24 +22,27 @@
 class PecaHandler : public Thread {
 
 public:
-	PecaHandler(int id, Connection_Info_t ci, int peca, int campanha, int total_emails = 1);
-	void setDNS(string dns);
+	PecaHandler(int peca, int campanha, int total_emails = 1);
 	~PecaHandler();
+
+	bool dead() { return dead; }
 
 private:
 	virtual void* Run(void*);
-	void* tratarErros(ErrorMessages_t em, int id_peca, int id_campanha)
+	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha)
+	void init();
 
 	int id;
 	Mutex mutex;
 	int id_peca;
 	int id_campanha;
 	int total_emails;
-	Connection_Info_t s_CI;
-	Debug* debug;
-	string DNS;
 
-	map<string, vector<string> > servidoresMX;
+	bool dead;
+
+	Database database(conn);
+
+	map<string, vector< auto_ptr<Sender> > > servidoresMX;
 };
 
 

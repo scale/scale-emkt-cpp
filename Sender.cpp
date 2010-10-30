@@ -19,11 +19,11 @@ using namespace std;
 
 void* Sender::Run(void*) {
 	Debug debug(1, "Sender");
+	Mailer mail;
 
 	setRunning(true);
 	active = true;
 
-	Mailer* mail = NULL;
 
 	while (active) {
 		/* Instanciando a classe de email e alimentando-a
@@ -140,9 +140,6 @@ void* Sender::Run(void*) {
 		}
 
 		setRunning(false);
-		//free(mail);
-		if (mail != NULL)
-			delete mail;
 
 	}
 	Stop();
@@ -150,8 +147,8 @@ void* Sender::Run(void*) {
 
 }
 
-void Sender::Recipient(const vector<Address>& rcpt) {
-	this->recipients = rcpt;
+void Sender::add_recipient(const Address& rcpt) {
+	this->recipients->push(rcpt);
 }
 
 

@@ -18,10 +18,12 @@
 #include "QueueManager.h"
 #include "Peca.h"
 
+#include <queue>
+
 class Sender: public Thread {
 
 public:
-	Sender(const std::string& server, const Peca& peca) {
+	Sender(const std::string& server, const Peca& peca) : mailer(server) {
 		this->peca = peca;
 		this->server = server;
 		setRunning(false);
@@ -35,18 +37,24 @@ public:
 		return &em;
 	}
 
-	void Sender::Recipient(const vector<Address>& rcpt);
-	void* tratandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
+	void add_recipient(const Address& rcpt);
+	void substitute(const std::string& name, const std::string value);
+
+	void* tratando_erros(ErrorMessages_t em, int id_peca, int id_campanha);
 
 private:
 	virtual void* Run(void*);
 
 	int id;
 	Peca peca;
-	std::vector<Address> recipients;
+	std::queue<Address> recipients;
 	std::string server;
 	Mutex mutex;
+	Mailer mailer;
 	ErrorMessages_t em;
+
+	std::map<std::string, std::string> macros;
+
 
 	bool active;
 };

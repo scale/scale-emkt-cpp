@@ -27,10 +27,10 @@ Mailer::~Mailer() {
 
 void Mailer::html(const std::string& html) {
 
-	message[0] = html;
+	body_html = html;
 
 	// if the message is less than a 1000 chrarcters we do not need to add newlines
-	if (message.size() > 1000)
+	if (body_html.size() > 1000)
 		checklinesarelessthan1000chars();
 }
 

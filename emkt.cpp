@@ -23,137 +23,126 @@ using namespace std;
 #include "unistd.h"
 #include <fstream>
 
+Debug debug(1, "emkt");
+Connection_Info_t conn; //Struct com os dados de conexao;
+std::string DNS = "";
+QueueManager qm;
 
-int main()
-{
-	Debug debug(1,"emkt");
+int main() {
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");
-        // variaveis
-        int num_threads = 0; //Numero de threads rodando
-        PecaHandler* ph[MAX_THREADS_PECA]; //Matriz de Threads que deverao rodar
-        Connection_Info_t s_CI; //Struct com os dados de conexao;
 
-        ifstream hfile(CONF_DIR);
+	PecaHandler* ph[MAX_THREADS_PECA]; //Matriz de Threads que deverao rodar
 
-	debug.info("Configuration file: %s", CONF_DIR);
-	string DNS = "";
+	leConfiguracao();
 
-	int dados_conexao = 0;
-	string temp;
-        while ( !hfile.eof() ) {
-	    getline(hfile, temp);
-
-	    if(temp.find("database") == 0){
-                s_CI.db = temp.substr( temp.find("=")+1, temp.length() );
-                dados_conexao++;
-            }
-
-	    if(temp.find("host") == 0){
-	        s_CI.host = temp.substr( temp.find("=")+1, temp.length() );
-		dados_conexao++;
-            }
-
-	    if(temp.find("user") == 0){
-	        s_CI.user = temp.substr( temp.find("=")+1, temp.length() );
-		dados_conexao++;
-	    }
-
-	    if(temp.find("pass") == 0){
-	        s_CI.pass = temp.substr( temp.find("=")+1, temp.length() );
-		dados_conexao++;
-	    }
-
-	    if(temp.find("DNS") == 0){
-	        DNS = temp.substr( temp.find("=")+1, temp.length() );
-
-	    }
-        }
-
-	debug.info("Parametros encontrados: %s@%s:/%s - DNS: %s ", s_CI.user.c_str(), s_CI.host.c_str(), s_CI.db.c_str(), DNS.c_str());
-
-	for(int i = 0; i < MAX_THREADS_PECA; i++)
+	for (int i = 0; i < MAX_THREADS_PECA; i++) {
 		ph[i] = NULL;
+	}
 
-	try{
-	  //Para tratar os erros que retornam para a tabela EmktPop pelo programa procmailemkt
-	  //colocado no MTA para desviar os emails da conta de retorno da peca para o Banco
-	  ErrorPop ep(&s_CI);
-	  ep.Start();
+	try {
+		//Para tratar os erros que retornam para a tabela EmktPop pelo programa procmailemkt
+		//colocado no MTA para desviar os emails da conta de retorno da peca para o Banco
+		//ErrorPop ep(&conn);
+		//ep.Start();
 
-	  debug.debug("Conectando ao BD...");
-	  Database database(s_CI);
+		debug.debug("Conectando ao BD...");
+		Database database(conn);
+		qm.Start();
 
-	  //caso o programa tenha caido durante um envio voltar a peca ao status para ser entregue
-	  database.executeQuery("update EmktPeca set stats='0' where stats='1'");
+		//caso o programa tenha caido durante um envio voltar a peca ao status para ser entregue
+		database.executeQuery(
+				"update EmktPeca P inner join EmkyCampanha C using(id_campanha) "
+					"set P.stats = 0 where P.stats = 1 and C.stats = 0");
 
-	  while(1){
-	    Pointer pointer(s_CI,"select * from EmktPeca where data_enviar <= now() and stats = 0");
+		while (1) {
+			Pointer
+					pointer(
+							conn,
+							"select P.* from EmktPeca P inner join EmktCampanha C using(id_campanha) "
+								"where P.data_enviar <= now() and P.stats = 0 and (C.stats = 0 or C.id_campanha = 0) "
+								"order by P.id_peca,P.id_campanha");
 
-	    if(pointer.getTotal() < 1){
-			sleep(10);
-		continue;
-	    }
-	    for(int vez = 0; vez < MAX_THREADS_PECA; vez++){
+			if (pointer.getTotal() < 1) {
+				sleep(30);
+				continue;
+			}
 
-		//Se so tiver uma campanha
-		if(vez >= pointer.getTotal())
-			break;
+			while (pointer.getNext()) {
+				int slots_free = 0;
 
-		//PecaHandler(int id, Connection_Info_t ci, int peca, int campanha, int total_emails = 1);
-	    	//este tqm.ad dece morrer mas antes passar o "relatorio" do envio
-		if( ph[vez] != NULL && ph[vez]->getStatus() == 0){
-                    delete(ph[vez]);
-                    ph[vez] = NULL;
-		}
+				for (int vez = 0; vez < MAX_THREADS_PECA; vez++) {
 
-		if(pointer.getNext() && ph[vez] == NULL){
+					//este tqm.ad deve morrer mas antes passar o "relatorio" do envio
+					if (ph[vez] != NULL && ph[vez]->getStatus() == 0) {
+						delete (ph[vez]);
+						ph[vez] = NULL;
+					}
 
-		        int id_campanha = 0;
-			int id_peca = 0;
+					if (ph[vez] != NULL) continue;
 
-	    		id_peca = atoi(pointer.get("id_peca"));
-			id_campanha = atoi(pointer.get("id_campanha"));
+					int id_campanha = 0;
+					int id_peca = 0;
+					slots_free++;
 
-			ph[vez] = new PecaHandler(vez,s_CI, id_peca, id_campanha,TOTAL_EMAIL);
+					id_peca = atoi(pointer.get("id_peca"));
+					id_campanha = atoi(pointer.get("id_campanha"));
 
-			//colocando o DNS que veio do arquivo
-			ph[vez]->setDNS(DNS);
+					debug.info("Iniciando peca %d/%d", id_campanha, id_peca);
+					ph[vez] = new PecaHandler(id_peca, id_campanha);
 
-			//Se o programa retornou sem ter exluido os emails da fila
-			//é porque não foram entregues, então ao reiniciar recolocamos todos
-			//na fila e caso seja a primeira, nao ira mudar nada
-			database.executeQuery("update EmktFilaEnvioPeca set "
-						"stats='0' where id_peca='%d' "
-						"and id_campanha='%d'",id_peca, id_campanha);
+					ph[vez]->Start();
 
-			//Definindo o stats de que esta em andamento
-			debug.debug("Atualizando peca %d!",id_peca);
-			database.executeQuery("update EmktPeca set stats=1 where "
-				"id_peca='%d' and id_campanha='%d'", id_peca, id_campanha);
+				} // FIM FOR
 
-			debug.debug("Iniciando peca %d!",id_peca);
-			ph[vez]->Start();
+				if (slots_free == 0) break;
+			}
 
+			sleep(30);
+		} //FIM DO WHile forever
 
+	} catch (DBException dbe) {
+		debug.error("DBException: %s", dbe.err_description.c_str());
 
-		}
-
-		sleep(1);
-	    } // FIM FOR
-
-		sleep(10);
-	  } //FIM DO WHile
-
-	} catch(DBException dbe) {
-		debug.error("EMKT::DBException:: %s", dbe.err_description.c_str());
-
-	} catch(ErrorMessages_t ___exception){
-		debug.error("EMKT::ErrorMessages_t:: " ,___exception.message_error.c_str());
 	}
 
 	debug.info("SAINDO DO PROGRAMA");
 
-        return 0;
+	return 0;
 }
 
+void leConfiguracao() {
+	ifstream hfile(CONF_DIR);
+
+	debug.info("Configuration file: %s", CONF_DIR);
+
+	string temp;
+	while (!hfile.eof()) {
+		getline(hfile, temp);
+
+		if (temp.find("database") == 0) {
+			conn.db = temp.substr(temp.find("=") + 1, temp.length());
+		}
+
+		if (temp.find("host") == 0) {
+			conn.host = temp.substr(temp.find("=") + 1, temp.length());
+		}
+
+		if (temp.find("user") == 0) {
+			conn.user = temp.substr(temp.find("=") + 1, temp.length());
+		}
+
+		if (temp.find("pass") == 0) {
+			conn.pass = temp.substr(temp.find("=") + 1, temp.length());
+		}
+
+		if (temp.find("DNS") == 0) {
+			DNS = temp.substr(temp.find("=") + 1, temp.length());
+		}
+	}
+
+	debug.info("Parametros encontrados: %s@%s:/%s - DNS: %s ",
+			conn.user.c_str(), conn.host.c_str(), conn.db.c_str(), DNS.c_str());
+
+	hfile.close();
+}
 
