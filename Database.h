@@ -36,6 +36,8 @@ typedef struct Connection_Info
 
 } Connection_Info_t;
 
+Connection_Info_t conn; //Struct com os dados de conexao;
+
 class DBException{
 
 public:

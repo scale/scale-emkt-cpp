@@ -22,11 +22,13 @@ using namespace std;
 
 class DNS {
 public:
-	DNS(const std::string& dns_server);
+	DNS();
 	virtual ~DNS();
 
-	static char* GetDomain(const std::string& email);
-	bool GetMX(std::vector<string>& adds);
+	static std::string GetDomain(const std::string& domain);
+	bool GetMX(std::vector<string>& adds, const std::string& domain);
+
+	static std::string server;
 
 private:
     void parsename(int& pos, const unsigned char dns[], std::string& name);
@@ -51,7 +53,6 @@ private:
 	// it should be a static function or a global? thinking about it.
 	Address parseaddress(const std::string& addresstoparse);
 
-	std::string server;
 };
 
 #endif /* DNS_H_ */

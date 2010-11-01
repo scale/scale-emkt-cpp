@@ -23,10 +23,8 @@ using namespace std;
 #include "unistd.h"
 #include <fstream>
 
-Debug debug(1, "emkt");
-Connection_Info_t conn; //Struct com os dados de conexao;
-std::string DNS = "";
 QueueManager qm;
+
 
 int main() {
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");
@@ -138,10 +136,13 @@ void leConfiguracao() {
 		if (temp.find("DNS") == 0) {
 			DNS = temp.substr(temp.find("=") + 1, temp.length());
 		}
+		if (temp.find("instante_id") == 0) {
+			INSTANCE_NUM = atoi( temp.substr(temp.find("=") + 1, temp.length()).c_str() );
+		}
 	}
 
-	debug.info("Parametros encontrados: %s@%s:/%s - DNS: %s ",
-			conn.user.c_str(), conn.host.c_str(), conn.db.c_str(), DNS.c_str());
+	debug.info("Parametros encontrados: %s@%s:/%s - DNS: %s para instancia %d",
+			conn.user.c_str(), conn.host.c_str(), conn.db.c_str(), DNS.c_str(), INSTANCE_NUM);
 
 	hfile.close();
 }

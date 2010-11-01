@@ -34,7 +34,6 @@ extern "C" {
 
 #include <string>
 #include <vector>
-#include "Debug.h"
 
 using namespace std;
 
@@ -44,14 +43,9 @@ using namespace std;
 
 typedef vector<string> vString;
 
-class ResultMessage {
-public:
-	Address recipient;
-	std::string message;
-	int error;
-};
+#ifndef ADDRESS_H_
+#define ADDRESS_H_
 
-// email address wrapper struct
 class Address {
 public:
 	std::string id;
@@ -65,6 +59,18 @@ public:
 		return *this;
 	}
 };
+
+#endif // _ADDRESS_H
+
+class ResultMessage {
+public:
+	Address recipient;
+	std::string message;
+	int error;
+};
+
+std::string DNS = "";
+int INSTANCE_NUM = 1;
 
 const char * get_socket_error(int err_no);
 

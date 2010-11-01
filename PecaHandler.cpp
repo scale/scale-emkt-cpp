@@ -39,8 +39,8 @@ void PecaHandler::init() {
 	//é porque não foram entregues, então ao reiniciar recolocamos todos
 	//na fila e caso seja a primeira, nao ira mudar nada
 	database.executeQuery("update EmktFilaEnvioPeca set "
-		"stats=0 where id_peca=%d and id_campanha=%d",
-		id_peca, id_campanha);
+		"stats=0 where id_peca=%d and id_campanha=%d and id_thread = %d" ,
+		id_peca, id_campanha, INSTANCE_NUM);
 
 	//Definindo o stats de que esta em andamento
 	database.executeQuery("update EmktPeca set stats=1 where "
@@ -103,8 +103,8 @@ void* PecaHandler::Run(void* param) {
 		Pointer pointer(
 						conn,
 						"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
-						"where id_peca=%d and id_campanha=%d ",
-						id_peca, id_campanha);
+						"where id_peca=%d and id_campanha=%d and id_thread = %d",
+						id_peca, id_campanha, INSTANCE_NUM);
 
 		while (pointer.next()) {
 			vector < string > vdd;

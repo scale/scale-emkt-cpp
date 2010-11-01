@@ -32,36 +32,37 @@ public:
 
 	void send();
 
-	bool attach(const std::string& filename);
-	bool removeattachment(const std::string& filename);
-	// clear all attachments from the mail.
-	void clearattachments();
-
 	// Set a new Subject for the mail (replacing the old)
 	// will return false if newSubject is empty.
-	void subject(const std::string& newSubject);
+	void subject(const std::string& newSubject) { subject = newSubject; } ;
+	const std::string subject() { return _subject; } ;
 
 	// sets the senders address (fromAddress variable)
-	void from(const std::string& from);
+	void from(const std::string& from) { fromAddress.email = from; fromAddress.name=""; };
+	void from(const Address& addr) { fromAddress = addr; };
 
-	void to(const std::string& name, const std::string& email);
-	void to(const struct Address& addr);
+	void to(const Address& addr) { recipients.push_back(addr); };
+	void to(const std::string& name, const std::string& email) {
+		Address addr;
+		addr.name = name;
+		addr.email = email;
+		recipients.push_back(addr);
+	};
 
 
 	// returns the return code sent by the smtp server or a local error.
 	// this is the only way to find if there is an error in processing.
 	// if the mail is sent correctly this string will begin with 250
 	// see smtp RFC 821 section 4.2.2 for response codes.
-	const std::string& response() const;
+	const std::string& response() const { return returnstring; };
 
 	//Para inserir o conteudo TEXT
-	void text(const char* text);
+	void text(const char* text) { body_text = text; };
 	//Para inserir o conteudo HTML
-	void html(const char* html);
+	void html(const char* html) { body_html = html; };
 
 	//Para devolver o struct que conetem os erros elvantados durante a entrea do email
-	ErrorMessages_t getErrorMessages();
-
+	std::vector<ResultMessage> getErrorMessages() { return mensagens; };
 
 private:
 
@@ -80,28 +81,16 @@ private:
 	void closesocket(const SOCKET& s);
 
 	// The addresses to send the mail to
-	std::vector<std::pair<Address, short> > recipients;
+	std::vector<Address> recipients;
 	// The address the mail is from.
 	Address fromAddress;
 
-	string errors_toAddress;
-
-	// Subject of the mail
-	std::string subject;
-	// Corpo em texto
+	std::string _subject;
 	std::string body_text;
-	// Corpo em HTML
 	std::string body_html;
-	// The contents of the mail message
-	std::vector<char> message;
-	// attachments: the file as a stream of char's and the name of the file.
-	std::vector<std::pair<std::vector<char>, std::string> > attachments;
+
 	// This will be filled in from the toAddress by getserveraddress
 	std::string server;
-	// The port to mail to on the smtp server.
-	const unsigned short port = htons(25);
-	// quoted-printable funcao para converter
-	char * qpEncode(const char *sfrom, int fromlen, int *tolen = NULL);
 
 	std::vector<ResultMessage> mensagens;
 
