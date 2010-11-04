@@ -13,12 +13,16 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
+
+#ifdef LINUX
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 typedef int SOCKET; // get round windows definitions.
+#endif
+
+#include <unistd.h>
 
 #include <vector>
 #include <string>
@@ -34,7 +38,7 @@ public:
 
 	// Set a new Subject for the mail (replacing the old)
 	// will return false if newSubject is empty.
-	void subject(const std::string& newSubject) { subject = newSubject; } ;
+	void subject(const std::string& newSubject) { _subject = newSubject; } ;
 	const std::string subject() { return _subject; } ;
 
 	// sets the senders address (fromAddress variable)

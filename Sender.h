@@ -33,14 +33,13 @@ public:
 		Stop();
 	}
 
-	ErrorMessages_t* getErrorMessages() {
-		return &em;
+	ResultMessage getErrorMessages() {
+		return em;
 	}
 
 	void add_recipient(const Address& rcpt);
-	void substitute(const std::string& name, const std::string value);
+	void substitute(const std::string& name, const std::string value) {};
 
-	void* tratando_erros(ErrorMessages_t em, int id_peca, int id_campanha);
 
 private:
 	virtual void* Run(void*);
@@ -51,7 +50,7 @@ private:
 	std::string server;
 	Mutex mutex;
 	Mailer mailer;
-	ErrorMessages_t em;
+	ResultMessage em;
 
 	std::map<std::string, std::string> macros;
 

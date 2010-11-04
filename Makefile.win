@@ -1,0 +1,90 @@
+# Project: scale-emkt-cpp
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = Base64.o binaryblock.o Database.o Date.o Debug.o DNS.o emkt.o Encoder.o ErrorPop.o Mailer.o Mutex.o Peca.o PecaHandler.o Pointer.o procmailemkt.o QueueManager.o QuotedPrintable.o Sender.o socket_err.o test.o Thread.o $(RES)
+LINKOBJ  = Base64.o binaryblock.o Database.o Date.o Debug.o DNS.o emkt.o Encoder.o ErrorPop.o Mailer.o Mutex.o Peca.o PecaHandler.o Pointer.o procmailemkt.o QueueManager.o QuotedPrintable.o Sender.o socket_err.o test.o Thread.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib"  
+INCS =  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include" 
+BIN  = scale-emkt-cpp.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before scale-emkt-cpp.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "scale-emkt-cpp.exe" $(LIBS)
+
+Base64.o: Base64.cpp
+	$(CPP) -c Base64.cpp -o Base64.o $(CXXFLAGS)
+
+binaryblock.o: binaryblock.cpp
+	$(CPP) -c binaryblock.cpp -o binaryblock.o $(CXXFLAGS)
+
+Database.o: Database.cpp
+	$(CPP) -c Database.cpp -o Database.o $(CXXFLAGS)
+
+Date.o: Date.cpp
+	$(CPP) -c Date.cpp -o Date.o $(CXXFLAGS)
+
+Debug.o: Debug.cpp
+	$(CPP) -c Debug.cpp -o Debug.o $(CXXFLAGS)
+
+DNS.o: DNS.cpp
+	$(CPP) -c DNS.cpp -o DNS.o $(CXXFLAGS)
+
+emkt.o: emkt.cpp
+	$(CPP) -c emkt.cpp -o emkt.o $(CXXFLAGS)
+
+Encoder.o: Encoder.cpp
+	$(CPP) -c Encoder.cpp -o Encoder.o $(CXXFLAGS)
+
+ErrorPop.o: ErrorPop.cpp
+	$(CPP) -c ErrorPop.cpp -o ErrorPop.o $(CXXFLAGS)
+
+Mailer.o: Mailer.cpp
+	$(CPP) -c Mailer.cpp -o Mailer.o $(CXXFLAGS)
+
+Mutex.o: Mutex.cpp
+	$(CPP) -c Mutex.cpp -o Mutex.o $(CXXFLAGS)
+
+Peca.o: Peca.cpp
+	$(CPP) -c Peca.cpp -o Peca.o $(CXXFLAGS)
+
+PecaHandler.o: PecaHandler.cpp
+	$(CPP) -c PecaHandler.cpp -o PecaHandler.o $(CXXFLAGS)
+
+Pointer.o: Pointer.cpp
+	$(CPP) -c Pointer.cpp -o Pointer.o $(CXXFLAGS)
+
+procmailemkt.o: procmailemkt.cpp
+	$(CPP) -c procmailemkt.cpp -o procmailemkt.o $(CXXFLAGS)
+
+QueueManager.o: QueueManager.cpp
+	$(CPP) -c QueueManager.cpp -o QueueManager.o $(CXXFLAGS)
+
+QuotedPrintable.o: QuotedPrintable.cpp
+	$(CPP) -c QuotedPrintable.cpp -o QuotedPrintable.o $(CXXFLAGS)
+
+Sender.o: Sender.cpp
+	$(CPP) -c Sender.cpp -o Sender.o $(CXXFLAGS)
+
+socket_err.o: socket_err.cpp
+	$(CPP) -c socket_err.cpp -o socket_err.o $(CXXFLAGS)
+
+test.o: test.cpp
+	$(CPP) -c test.cpp -o test.o $(CXXFLAGS)
+
+Thread.o: Thread.cpp
+	$(CPP) -c Thread.cpp -o Thread.o $(CXXFLAGS)

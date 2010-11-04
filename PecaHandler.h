@@ -29,7 +29,7 @@ public:
 
 private:
 	virtual void* Run(void*);
-	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha)
+	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
 	void init();
 
 	int id;
@@ -40,7 +40,7 @@ private:
 
 	bool dead;
 
-	Database database(conn);
+	Database database;
 
 	map<string, vector< auto_ptr<Sender> > > servidoresMX;
 };

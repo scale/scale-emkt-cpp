@@ -80,7 +80,7 @@ bool DNS::GetMX(std::vector<string>& adds, const std::string& domain) {
                 memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
 
 
-	bzero(&(addr.sin_zero), 8);
+        memset(&(addr.sin_zero), 0, 8);
 #ifdef WIN32
         if(connect(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
 #else

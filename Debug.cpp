@@ -12,13 +12,15 @@
 
 Debug::Debug(int log, const char* ident){
 	write = log;
+#ifdef LINUX	
 	openlog(ident, LOG_NDELAY | LOG_PERROR | LOG_PID, LOG_LOCAL0);
-
+#endif
 }
 
 Debug::~Debug(){
+#ifdef LINUX	
         closelog();
-
+#endif
 }
 
 bool Debug::Log(const char *fmt, ...)
@@ -29,7 +31,9 @@ bool Debug::Log(const char *fmt, ...)
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
+#ifdef LINUX	
         syslog(LOG_LOCAL0|LOG_INFO, log_text);
+#endif
 
 	return true;
 }
@@ -43,7 +47,7 @@ bool Debug::append(const char *fmt, ...)
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
-    	ofstream myFile("/var/log/emkt.log",ios::app);
+    	ofstream myFile("emkt.log",ios::app);
         // Creates an ofstream object named myFile
 
     	if (! myFile) // Always test file open
@@ -73,8 +77,9 @@ void Debug::info(const char *fmt, ...)
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
-        //syslog(LOG_MAKEPRI(LOG_LOCAL0,LOG_WARNING), log_text);
+#ifdef LINUX	
         syslog(LOG_LOCAL0|LOG_INFO, log_text);
+#endif
 
 }
 
@@ -87,7 +92,9 @@ void Debug::debug(const char *fmt, ...){
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
+#ifdef LINUX	
         syslog(LOG_DEBUG|LOG_LOCAL0, log_text);
+#endif
 
 }
 
@@ -98,7 +105,9 @@ void Debug::error(const char *fmt, ...){
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
+#ifdef LINUX	
         syslog(LOG_ERR|LOG_LOCAL0, log_text);
+#endif
 
 }
 
@@ -109,7 +118,9 @@ void Debug::warn(const char *fmt, ...){
         vsnprintf(log_text, 2047, fmt, args);
         va_end(args);
 
+#ifdef LINUX	
         syslog(LOG_WARNING|LOG_LOCAL0, log_text);
+#endif
 
 }
 

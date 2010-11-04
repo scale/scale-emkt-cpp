@@ -17,7 +17,9 @@
 extern "C" {
 #endif
 
+#ifdef LINUX
 #include <syslog.h>
+#endif
 
 #ifdef  __cplusplus
 }

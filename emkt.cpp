@@ -21,10 +21,13 @@ using namespace std;
 #include "QueueManager.h"
 #include "Mailer.h"
 #include "unistd.h"
+#include "stdlib.h"
 #include <fstream>
+
 
 QueueManager qm;
 
+void leConfiguracao();
 
 int main() {
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");

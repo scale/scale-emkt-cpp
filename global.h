@@ -23,7 +23,6 @@ extern "C" {
 #include <errno.h>
 #endif
 
-
 #ifdef  __cplusplus
 }
 #endif

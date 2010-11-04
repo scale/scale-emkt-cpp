@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 /*
  * DNS.h
  *
@@ -10,12 +9,19 @@
 #define DNS_H_
 
 #include "global.h"
+
+#ifdef LINUX
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 typedef int SOCKET; // get round windows definitions.
+#endif
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
+#include <unistd.h>
 
 #include <string>
 using namespace std;
