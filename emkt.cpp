@@ -26,8 +26,9 @@ using namespace std;
 
 int main()
 {
-	Debug debug(1,"emkt");
+	Debug debug("main");
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");
+
         // variaveis
         int num_threads = 0; //Numero de threads rodando
         PecaHandler* ph[MAX_THREADS_PECA]; //Matriz de Threads que deverao rodar

@@ -20,7 +20,7 @@
 
 	void* Sender::Run(void*)
 	{
-		Debug debug(1,"Sender");
+		Debug debug("Sender");
 
 		if( es.to.size() <= 0 ){
 			setRunning(false);
@@ -208,7 +208,7 @@
 	}
 
 	bool Sender::setEmailSouces(emailSource_t& emailsources){
-		Debug debug(1,"Sender");
+		Debug debug("Sender");
 		mutex.Acquire();
 		es = emailsources;
 		mutex.Release();
@@ -239,7 +239,7 @@
 
 
 	void* Sender::trantandoErros(ErrorMessages_t em, int id_peca, int id_campanha){
-		Debug debug(1,"Inicio");
+		Debug debug("Sender");
 		string emails_validos;
 		if(em.id_error < 300 && em.id_error > 0) { //sucessno envio, verificar se todos usuarios eram validos
 			for(unsigned int x = 0; x < em.id_email_error.size(); x++){

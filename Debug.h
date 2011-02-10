@@ -28,18 +28,13 @@ extern "C" {
 class Debug {
 
 public:
-	Debug(int log, const char* ident);
+	Debug(const char *ident);
 	~Debug();
 	bool Log(const char *fmt, ...);
-	bool append(const char *fmt, ...);
-	void Writing(int log);
 	static void info(const char *fmt, ...);
 	static void debug(const char *fmt, ...);
 	static void error(const char *fmt, ...);
 	static void warn(const char *fmt, ...);
-
-private:
-	int write;
 
 };
 

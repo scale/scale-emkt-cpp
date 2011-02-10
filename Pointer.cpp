@@ -79,7 +79,7 @@ void Pointer::query(const char *fmt, ...) {
 	vsnprintf(sql, 2047, fmt, args);
 	va_end(args);
 	
-	Debug debug(1,"Pointer");
+	Debug debug("Pointer");
 	
 	try{
 	

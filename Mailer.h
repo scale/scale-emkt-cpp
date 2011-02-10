@@ -196,6 +196,11 @@ private:
         struct Address {
                 std::string name;    // e.g.   freddy foobar
                 std::string address; // e.g.   someone@mail.com
+
+		std::string domain() {
+			size_t pos = address.find("@");
+			return address.substr(pos+1);
+		}
         };
 
         // less typing later, these are definately abominations!

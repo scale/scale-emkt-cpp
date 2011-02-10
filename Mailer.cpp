@@ -14,6 +14,7 @@
 #include <ctime>     // for localtime
 #include "Mailer.h"
 #include "QuotedPrintable.h"
+#include "MicroDNS.h"
 
 #include <errno.h>
 
@@ -233,7 +234,7 @@ void Mailer::reset() {
 
 // this is where we do all the work.
 void Mailer::send() {
-	Debug debug(1,"Mailer");
+	Debug debug("Mailer");
 
 	returnstring = ""; // clear out any errors from previous use
 	m_ErrorMessages.message_error = "";
@@ -253,14 +254,28 @@ void Mailer::send() {
 		throw m_ErrorMessages;
 	}
 
+/*
 	if (nameserver.length() == 0) {
 		m_ErrorMessages.message_error = "455 No nameserver";
 		m_ErrorMessages.id_error = 455;
 		returnstring = m_ErrorMessages.message_error;
 		throw m_ErrorMessages;
 	}
+*/
 
 	std::vector<sockaddr_in> adds;
+
+	//TODO
+	MicroDNS mdns;
+	struct mx _mx = mdns.mx( recipients.front().first.domain() );
+
+	struct sockaddr_in mx_host;
+	mx_host.sin_addr = _mx.addr;
+	mx_host.sin_port = htons(25);
+	mx_host.sin_family = AF_INET;
+
+	adds.push_back( mx_host );
+/*
 	if(lookupMXRecord) {
 		if(!gethostaddresses(adds)) {
 			// error!! we are dead.
@@ -280,7 +295,7 @@ void Mailer::send() {
 		}
 
 	}
-
+*/
 
 	SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -304,7 +319,7 @@ void Mailer::send() {
 		sockaddr_in *temp_in;
 		struct in_addr *temp_addr;
 
-		std::memcpy(&temp, &(*address), sizeof(temp));
+		::memcpy(&temp, &(*address), sizeof(temp));
 		temp_in = (sockaddr_in*) &temp;
 		temp_addr = &temp_in->sin_addr;
 
@@ -405,7 +420,7 @@ void Mailer::send() {
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
-			debug.debug("RCPT: %s",returnstring.c_str());
+			//debug.debug("RCPT: %s",returnstring.c_str());
 
 			if(returnstring.substr(0,3) != OK)
 			{

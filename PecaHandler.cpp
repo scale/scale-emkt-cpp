@@ -159,7 +159,7 @@ PecaHandler::PecaHandler(int id, Connection_Info_t ci, int peca, int campanha, i
 	this->total_emails = total_emails;
 
 	DNS = "";
-	debug = new Debug(1,"PecaHandler");
+	debug = new Debug("PecaHandler");
 
 	debug->debug("PH[%d]::Run -- Id_campanha = %d / Id_peca = %d ",id_peca,id_campanha,id_peca);
 

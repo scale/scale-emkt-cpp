@@ -9,6 +9,7 @@
  ***************************************************************************/
 #include "Database.h"
 #include <iostream>
+#include <string.h>
 
 
 
@@ -25,6 +26,7 @@ Database::Database(void) {
 	conn_status = false;
 
 	int dados_conexao = 0;
+	debug = new Debug("Database");
 
 	if(host.length() < 1 &&
 		pass.length() < 1 &&
@@ -105,6 +107,8 @@ Database::Database(Connection_Info_t &ci_t) {
 	connectionInfo = ci_t;
 	
 	result = NULL;
+
+	debug = new Debug("Database");
 	
 	try{
 		
@@ -129,6 +133,7 @@ Database::~Database(){
 		connection = NULL;
 	}
 
+	if (debug != NULL) delete debug;
 }
 
 //Limpa o ponteiro com o banco da var membra result
@@ -274,6 +279,8 @@ void Database::executeQuery(const char *fmt, ...){
 			throw dbe;
 		}
 	}
+
+	debug->debug("%s", sql);
 
 	if( connection != NULL && mysql_query(connection,sql) != 0) {
 	

@@ -17,6 +17,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #ifdef LINUX
 #include <asm/errno.h>
 #else

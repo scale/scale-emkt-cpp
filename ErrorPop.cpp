@@ -8,6 +8,8 @@
  *   (at your option) any later version.                                   *
  ***************************************************************************/
 #include <stdio.h>
+#include <string.h>
+
 #include "ErrorPop.h"
 #include "Pointer.h"
 
@@ -18,7 +20,7 @@ void* ErrorPop::Run(void* param){
 	std::vector<errorEmail_t> vEmails_error;
 
 	//Debug para jogar no log as informacoes
-	Debug debug(1,"ErrorPop");
+	Debug debug("ErrorPop");
 	debug.debug("Iniciando ErrorPop");
 
 	//Esta Thread nunca deve morrer

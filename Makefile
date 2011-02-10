@@ -10,12 +10,12 @@ BINDIR=$(BASENAME)/emkt
 INSTALL=install -o root -m
 BINPERM=02755 -s -g root
 
-CFLAGS	= -g -W -Wall -O2 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"' 
-CXXFLAGS = -g -W -Wall -O2 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
-LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -lssl -lcrypto 
+CFLAGS	= -g3 -W -Wall -O3 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"' 
+CXXFLAGS = -g3 -W -Wall -O3 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
+LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -L/usr/lib64/mysql -lssl -lcrypto 
 
 OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) ErrorPop.$(O) \
-     Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) DNS.$(O) \
+     Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) DNS.$(O) MicroDNS.$(O) \
      QuotedPrintable.$(O) Sender.$(O) Thread.$(O) binaryblock.$(O) \
      socket_err.$(O) emkt.$(O) 
 
@@ -39,7 +39,6 @@ ${OBJS}: ${SRCS}
 
 
 install: $(BINS) 
-	strip $(BINS)
 	$(INSTALL) $(BINPERM) $(BINS) $(BINDIR)
 
 deinstall:

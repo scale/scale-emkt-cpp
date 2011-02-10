@@ -16,6 +16,7 @@
 #include "global.h"
 #include "QueueManager.h"
 
+#include <string.h>
 
 typedef struct emailSource {
 vDadosPessoa to;
@@ -30,7 +31,7 @@ int id_peca;
 int id_campanha;
 
 	bool isValido() {
-		Debug debug(1,"Inicio");
+		Debug debug("Sender");
 		if( strlen(DNS.c_str()) < 7 ) {
 			debug.error("ERRO: DNS invalido? {%s}", DNS.c_str()); return false;
 		}

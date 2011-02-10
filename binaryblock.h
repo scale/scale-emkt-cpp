@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 
-typedef unsigned int size_t;
+typedef long unsigned int size_t;
 
 class binaryblock  
 {

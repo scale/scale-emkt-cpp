@@ -33,7 +33,7 @@ QueueManager::QueueManager(Connection_Info_t* s_ConInfo, int peca, int campanha,
 
 	tipo_peca = tpeca;
 
-	debug = new Debug(1,"QueueManager");
+	debug = new Debug("QueueManager");
 
 
 	

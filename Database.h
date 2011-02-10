@@ -3,6 +3,8 @@
 
 #include "global.h"
 
+#include "Debug.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -68,8 +70,8 @@ private:
 	int conn_status;
 	MYSQL *connection, mysql;
 	MYSQL_RES *result;
-	Debug* debug;
 
+	Debug *debug;
 };
 
 
