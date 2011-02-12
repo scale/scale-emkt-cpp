@@ -45,6 +45,7 @@ public:
 
 	Pointer(const Connection_Info_t &conInfo, const char *fmt, ...);
     ~Pointer();
+
     const char* get(const char* field);
     bool next();
     bool getNext();

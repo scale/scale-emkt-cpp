@@ -14,149 +14,59 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#ifdef LINUX
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 typedef int SOCKET; // get round windows definitions.
+#endif
+
+#include <unistd.h>
 
 #include <vector>
 #include <string>
 #include "Debug.h"
 
+class Mailer {
 
-typedef struct ErrorMessages {
-	    std::vector<std::string> emails_error;
-	    std::vector<int> id_email_error;
-	    std::string message_error;
-	    int id_error;
-	} ErrorMessages_t ;
-
-
-class Mailer
-{
 public:
-        // if MXLookup is true:
-        //    'server' is a nameserver to lookup an MX record by.
-        // if MXLookup is false.
-        //    'server' is an SMTP server which will be attempted directly for mailing
-        // if an IP address is not found, either MX record or direct to SMTP server,
-        // an attempt will be made to send mail directly to the server in the mail address.
-        // e.g. mail to fred@somewhere.com will have a connection attempt made directly to:
-        //      somewhere.com
-        Mailer(const char* TOaddress, const char* FROMaddress,
-                   const char* Subject, const std::vector<char>& Message,
-                   const char* server = "127.0.0.1"/*default to localhost*/,
-                   unsigned short Port = SMTP_PORT, // default SMTP port
-                   bool MXLookup = true);
+	Mailer(const std::string& server = "127.0.0.1");
+	~Mailer();
 
-        Mailer(const char* TOaddress, const char* FROMaddress,
-                   const char* Subject, const char* Message,
-                   const char* server = "127.0.0.1"/*default to localhost*/,
-                   unsigned short Port = SMTP_PORT, // default SMTP port
-                   bool MXLookup = true);
+	void send();
 
-	Mailer(std::string = "127.0.0.1"/*default to localhost*/,
-                   unsigned short Port = SMTP_PORT, // default SMTP port
-                   bool MXLookup = true);
+	// Set a new Subject for the mail (replacing the old)
+	// will return false if newSubject is empty.
+	void subject(const std::string& newSubject) { _subject = newSubject; } ;
+	const std::string subject() { return _subject; } ;
 
-        ~Mailer();
+	// sets the senders address (fromAddress variable)
+	void from(const std::string& from) { fromAddress.email = from; fromAddress.name=""; };
+	void from(const Address& addr) { fromAddress = addr; };
 
-        // call this operator to have the mail mailed.
-        // This is to facilitate using multiple threads
-        // i.e. using boost::thread.     (see http://www.boost.org)
-
-        //
-        // e.g.
-        //    Mailer mail(args...);
-        //    boost::thread thrd(mail); // operator()() implicitly called.
-        //    thrd.join(); // if needed.
-        //
-        // or:
-        //    Mailer mail(args...);
-        //    mail.operator()();
-        void send();
-
-        // attach a file to the mail. (MIME 1.0)
-        // returns false if !filename.length() or
-        // the file could not be opened for reading...etc.
-        bool attach(const std::string& filename);
-
-        // remove an attachment from the list of attachments.
-        // returns false if !filename.length() or
-        // the file is not attached or there are no attachments.
-        bool removeattachment(const std::string& filename);
-
-        // Set a new message (replacing the old)block_size
-        // will return false and not change the message if newmessage is empty.
-        bool setmessage(const std::string& newmessage);
-        bool setmessage(const std::vector<char>& newmessage);
-
-        // Set a new Subject for the mail (replacing the old)
-        // will return false if newSubject is empty.
-        bool setsubject(const std::string& newSubject);
-
-        // sets the nameserver or smtp server to connect to
-        // dependant on the constructor call, i.e. whether
-        // 'lookupMXRecord' was set to false or true.
-        // (see constructor comment for details)
-        bool setserver(const std::string& nameserver_or_smtpserver);
-
-        // sets the senders address (fromAddress variable)
-        bool setsender(const std::string& newsender);
-
-        bool seterrorsto(const std::string& errors_to);
-
-        // add a recipient to the recipient list. (maximum allowed recipients 100).
-        // returns true if the address could be added to the
-        // recipient list, otherwise false.
-        // recipient_type must be in the range Mailer::TO -> Mailer::BCC if
-        // not recipient_type defaults to BCC (blind copy), see const enum below.
-        bool addrecipient(const std::string& newrecipient, short recipient_type = TO /*TO, CC, Bcc*/);
-
-        // remove a recipient from the recipient list.
-        // returns true if the address could be removed from the
-        // recipient list, otherwise false.
-        bool removerecipient(const std::string& recipient);
-
-        // clear all recipients from the recipient list.
-        void clearrecipients();
-
-        // clear all attachments from the mail.
-        void clearattachments();
-
-        // clear all recipients, message, attachments, errors.
-        // does not reset the name/smtp server (use setserver for this)
-        // does not set the senders address (use setsender for this)
-        void reset();
-
-        // returns the return code sent by the smtp server or a local error.
-        // this is the only way to find if there is an error in processing.
-        // if the mail is sent correctly this string will begin with 250
-        // see smtp RFC 821 section 4.2.2 for response codes.
-        const std::string& response() const;
-
-        // Constants
-        // in unix we have to have a named object, hence the name "consts".
-        const static enum {TO, Cc, Bcc, SMTP_PORT = 25, DNS_PORT = 53} consts;
+	void to(const Address& addr) { recipients.push_back(addr); };
+	void to(const std::string& name, const std::string& email) {
+		Address addr;
+		addr.name = name;
+		addr.email = email;
+		recipients.push_back(addr);
+	};
 
 
-	//Para retornar o dominio a ser dado como EHLO, pegara o dominio do email que esta
-	// enviando o email
-	char* getDomainEmail(const std::string& email);
-
+	// returns the return code sent by the smtp server or a local error.
+	// this is the only way to find if there is an error in processing.
+	// if the mail is sent correctly this string will begin with 250
+	// see smtp RFC 821 section 4.2.2 for response codes.
+	const std::string& response() const { return returnstring; };
 
 	//Para inserir o conteudo TEXT
-	bool setBodyText(const char* text);
+	void text(const char* text) { body_text = text; };
 	//Para inserir o conteudo HTML
-	bool setBodyHtml(const char* html);
+	void html(const char* html) { body_html = html; };
 
 	//Para devolver o struct que conetem os erros elvantados durante a entrea do email
-	ErrorMessages_t getErrorMessages();
-
-	bool setid_camp_peca(const std::string& id);
-
+	std::vector<ResultMessage> getErrorMessages() { return mensagens; };
 
 private:
         // create a header with current message and attachments.
@@ -249,8 +159,32 @@ private:
 
         // filled in with server return strings
         std::string returnstring;
+/*
+	void checklinesarelessthan1000chars();
+
+	// initialises winsock in win32, does nothing in unix (a definate snore function)
+	void init() const;
+	// wrapper for closesocket...windows & close...unix
+	void closesocket(const SOCKET& s);
+
+	// The addresses to send the mail to
+	std::vector<Address> recipients;
+	// The address the mail is from.
+	Address fromAddress;
+
+	std::string _subject;
+	std::string body_text;
+	std::string body_html;
+
+	// This will be filled in from the toAddress by getserveraddress
+	std::string server;
+
+	std::vector<ResultMessage> mensagens;
+
+	// filled in with server return strings
+	std::string returnstring;
+*/
 };
 
 #endif // !ifndef __Mailer_H__
-
 

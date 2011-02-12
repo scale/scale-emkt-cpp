@@ -13,58 +13,51 @@
 #include "Mailer.h"
 #include "Mutex.h"
 #include "Thread.h"
+#include "Debug.h"
 #include "global.h"
 #include "QueueManager.h"
+#include "Peca.h"
 
 #include <string.h>
+#include <queue>
 
-typedef struct emailSource {
-vDadosPessoa to;
-string from;
-string subject;
-string body_txt;
-string body_html;
-string DNS;
-string errors_to;
-string id_camp_peca;
-int id_peca;
-int id_campanha;
-
-	bool isValido() {
-		Debug debug("Sender");
-		if( strlen(DNS.c_str()) < 7 ) {
-			debug.error("ERRO: DNS invalido? {%s}", DNS.c_str()); return false;
-		}
-		if( strlen(body_txt.c_str()) < 7 ) {
-			debug.error("ERRO: Body TXT invalido."); return false;
-		}
-		if( strlen(body_html.c_str()) < 10 ) {
-			debug.error("ERRO: Body HTML invalido."); return false;
-		}
-		if( strlen(subject.c_str()) < 3 ) {
-			debug.error("ERRO: Subject invalido? {%s}", subject.c_str()); return false;
-		}
-	}
-} emailSource_t;
-
-class Sender : public Thread {
+class Sender: public Thread {
 
 public:
-	Sender(int status);
-	~Sender();
-	ErrorMessages_t* getErrorMessages();
-	bool setEmailSouces(emailSource_t& emailsources);
-	void* trantandoErros(ErrorMessages_t em, int id_peca, int id_campanha);
+	Sender(const std::string& server, const Peca& peca) : mailer(server) {
+		this->peca = peca;
+		this->server = server;
+		setRunning(false);
+	}
+
+	~Sender() {
+		Stop();
+	}
+
+	ResultMessage getErrorMessages() {
+		return em;
+	}
+
+	void add_recipient(const Address& rcpt);
+	void substitute(const std::string& name, const std::string value) {};
+
 
 private:
 	virtual void* Run(void*);
+
 	int id;
+	Peca peca;
+	std::queue<Address> recipients;
+	std::string server;
 	Mutex mutex;
-	ErrorMessages_t em;
-	emailSource_t es;
+	Mailer mailer;
+	ResultMessage em;
 
+	std::map<std::string, std::string> macros;
+
+
+	bool active;
 };
-
 
 #endif
 

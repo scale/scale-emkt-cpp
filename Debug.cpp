@@ -15,12 +15,12 @@ Debug::Debug(const char* ident){
 
 	snprintf(nome, 500, "emkt:%s", ident);
 	openlog(nome, LOG_NDELAY | LOG_PID, LOG_LOCAL0);
-
 }
 
 Debug::~Debug(){
+#ifdef LINUX	
         closelog();
-
+#endif
 }
 
 bool Debug::Log(const char *fmt, ...)
@@ -28,11 +28,8 @@ bool Debug::Log(const char *fmt, ...)
     	char log_text[2048];
 	va_list args;
         va_start(args, fmt);
-        //vsnprintf(log_text, 2047, fmt, args);
         vsyslog(LOG_INFO, fmt, args);
         va_end(args);
-
-        //syslog(LOG_LOCAL0, log_text);
 
 	return true;
 }
@@ -45,10 +42,6 @@ void Debug::info(const char *fmt, ...)
         //vsnprintf(log_text, 2047, fmt, args);
 	vsyslog(LOG_INFO, fmt, args);
         va_end(args);
-
-        //syslog(LOG_MAKEPRI(LOG_LOCAL0,LOG_WARNING), log_text);
-        //syslog(LOG_LOCAL0|LOG_INFO, log_text);
-
 }
 
 
@@ -60,32 +53,21 @@ void Debug::debug(const char *fmt, ...){
         //vsnprintf(log_text, 2047, fmt, args);
 	vsyslog(LOG_DEBUG, fmt, args);
         va_end(args);
-
-        //syslog(LOG_DEBUG|LOG_LOCAL0, log_text);
-
 }
 
 void Debug::error(const char *fmt, ...){
 	char log_text[2048];
 	va_list args;
         va_start(args, fmt);
-        //vsnprintf(log_text, 2047, fmt, args);
 	vsyslog(LOG_ERR, fmt, args);
         va_end(args);
-
-        //syslog(LOG_ERR|LOG_LOCAL0, log_text);
-
 }
 
 void Debug::warn(const char *fmt, ...){
 	char log_text[2048];
 	va_list args;
         va_start(args, fmt);
-        vsnprintf(log_text, 2047, fmt, args);
+	vsyslog(LOG_WARNING, fmt, args);
         va_end(args);
-
-        //syslog(LOG_WARNING|LOG_LOCAL0, log_text);
-        syslog(LOG_LOCAL0, log_text);
-
 }
 

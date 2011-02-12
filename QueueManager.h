@@ -16,32 +16,25 @@
 #include "Thread.h"
 #include "Mailer.h"
 
-typedef struct dadosPessoa {
 
-string email;
-string nome;
-string id;
-
-} dadosPessoa_t;
-
-typedef vector<dadosPessoa_t> vDadosPessoa;
-
-class QueueManager{
+class QueueManager : public Thread {
 
 public:
-	QueueManager(Connection_Info_t* s_ConInfo, int peca, int campanha, int total_emails = 1, int tpeca = 0 );
+	QueueManager();
 	~QueueManager();
+
 	static bool returnQueue(const char* email);
 	bool returnQueue();
 	void statsInsert(const char* email, int code);
 	static void statsInsert(const char* email, int code, const std::string& m, int peca, int campanha);
 	void eraseQueue(const char* email);
 	static void eraseQueue(const char* email, int id_peca, int id_campanha);
-	vDadosPessoa getEmails(int threadId);
+	vector<Address> getEmails(int threadId);
 	static Connection_Info_t static_CI;
 	
 private:
-	Debug* debug;
+	virtual void* Run(void* param);
+
 	int id;
 	Database* database;
 	int block_size;

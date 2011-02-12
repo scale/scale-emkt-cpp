@@ -1,0 +1,24 @@
+# depslib dependency file v1.0
+1285422873 source:c:\projects\scale-emkt-cpp\base64.cpp
+	"Base64.h"
+
+1285422874 c:\projects\scale-emkt-cpp\base64.h
+	"Encoder.h"
+
+1285422873 c:\projects\scale-emkt-cpp\encoder.h
+	<string>
+	<sstream>
+	"binaryblock.h"
+
+1285422874 c:\projects\scale-emkt-cpp\binaryblock.h
+	<ctype.h>
+	<fcntl.h>
+	<signal.h>
+	<stdio.h>
+	<stdarg.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+	<sys/stat.h>
+	<sys/types.h>
+

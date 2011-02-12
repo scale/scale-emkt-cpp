@@ -7,33 +7,25 @@
 
 #include "DNS.h"
 
-DNS::DNS(const std::string& dns_server) {
-	server = dns_server;
+DNS::DNS() {
 }
 
 DNS::~DNS() {
 }
 
-char* DNS::GetDomain(const std::string& email) {
+std::string DNS::GetDomain(const std::string& email) {
 
-	char* domain;
-	int pos = 0;
-        // do some silly checks
-        if( email.length() > 0 ){
-		pos = email.find("@") + 1;
-		if(pos > 0){
-			domain = (char*) malloc (email.length() + 1 - pos);
-			strcpy(domain, email.c_str()+pos);
+	std::string::size_type pos = email.find('@');
 
-		}
+	if( pos == std::string::npos) {
+		return email;
+	} else {
+		return email.substr(pos+1);
 	}
-
-	return domain;
-
 }
 
 
-bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
+bool DNS::GetMX(std::vector<string>& adds, const std::string& domain) {
         adds.clear(); // be safe in case of my utter stupidity
 
         sockaddr_in addr;
@@ -44,7 +36,7 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
         hostent* host = 0;
 
 #ifdef WIN32
-        addr.sin_addr.S_un.S_addr = inet_addr(nameserver.c_str());
+        addr.sin_addr.S_un.S_addr = inet_addr(server.c_str());
         if(addr.sin_addr.S_un.S_addr != INADDR_NONE) {
 #else
         if(inet_aton(server.c_str(), &addr.sin_addr)) {
@@ -63,12 +55,12 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
                 addr.sin_addr.S_un.S_addr = inet_addr(server.c_str());
                 if(addr.sin_addr.S_un.S_addr != INADDR_NONE) {
 #else
-                if(inet_aton(server.c_str(), &addr.sin_addr)) {
+                if(inet_aton(domain.c_str(), &addr.sin_addr)) {
 #endif
                         host = gethostbyaddr((char*)&addr.sin_addr, sizeof(addr.sin_addr), AF_INET);
                 }
                 else
-                        host = gethostbyname(server.c_str());
+                        host = gethostbyname(domain.c_str());
 
                 if(!host) {
                         return false; // error!!!
@@ -76,15 +68,19 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
 
                 memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
 
-                adds.push_back(addr);
-		//std::cout << "sucesso " << host->h_addr << std::endl;
+                char *p = host->h_addr;
+                while (*p) {
+                	adds.push_back(p);
+                	p++;
+                }
+                // adds.push_back(addr);
                 return true;
         }
         else
                 memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
 
 
-	bzero(&(addr.sin_zero), 8);
+        memset(&(addr.sin_zero), 0, 8);
 #ifdef WIN32
         if(connect(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
 #else
@@ -97,10 +93,10 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
         unsigned char dns[512] = {1,1,   1,0,      0,1,      0,0, 0,0, 0,0};
         int dnspos = 12; // end of dns header
         std::string::size_type stringpos(0);
-        std::string::size_type next(server.find("."));
+        std::string::size_type next(domain.find("."));
         if(next != std::string::npos) { // multipart name e.g. "aserver.somewhere.net"
-                while(stringpos < server.length()) {
-                        std::string part(server.substr(stringpos, next-stringpos));
+                while(stringpos < domain.length()) {
+                        std::string part(domain.substr(stringpos, next-stringpos));
                         dns[dnspos] = part.length();
                         ++dnspos;
                         for(std::string::size_type i = 0; i < part.length(); ++i, ++dnspos) {
@@ -108,9 +104,9 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
                         }
 
                         stringpos = ++next;
-                        next = server.find(".", stringpos);
+                        next = domain.find(".", stringpos);
                         if(next == std::string::npos) {
-                                part = server.substr(stringpos, server.length() - stringpos);
+                                part = domain.substr(stringpos, domain.length() - stringpos);
                                 dns[dnspos] = part.length();
                                 ++dnspos;
                                 for(std::string::size_type i = 0; i < part.length(); ++i, ++dnspos) {
@@ -121,14 +117,14 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
                 }
         }
         else { // just a single part name. e.g. "aserver"
-                dns[dnspos] = server.length();
+                dns[dnspos] = domain.length();
                 ++dnspos;
-                for(std::string::size_type i = 0; i < server.length(); ++i, ++dnspos) {
-                        dns[dnspos] = server[i];
+                for(std::string::size_type i = 0; i < domain.length(); ++i, ++dnspos) {
+                        dns[dnspos] = domain[i];
                 }
         }
         // in case the server string has a "." on the end
-        if(server[server.length()-1] == '.')
+        if(domain[domain.length()-1] == '.')
                 dns[dnspos] = 0;
         else
                 dns[dnspos++] = 0;
@@ -217,7 +213,14 @@ bool DNS::GetMX(std::vector<sockaddr_in>& adds) {
                                                 continue; // just skip it!!!
                                         }
                                         memcpy((char*)&addr.sin_addr, host->h_addr, host->h_length);
-                                        adds.push_back(addr);
+
+                                        char *p = host->h_addr;
+                                        while (*p) {
+                                        	adds.push_back(p);
+                                        	p++;
+                                        }
+
+//                                        adds.push_back(addr);
                                 }
                                 // got the addresses
                                 return true;

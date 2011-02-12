@@ -14,25 +14,28 @@ CFLAGS	= -g3 -W -Wall -O3 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"'
 CXXFLAGS = -g3 -W -Wall -O3 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
 LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -L/usr/lib64/mysql -lssl -lcrypto 
 
-OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) ErrorPop.$(O) \
+OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) \
      Mailer.$(O) Mutex.$(O) PecaHandler.$(O) Pointer.$(O) QueueManager.$(O) DNS.$(O) MicroDNS.$(O) \
      QuotedPrintable.$(O) Sender.$(O) Thread.$(O) binaryblock.$(O) \
-     socket_err.$(O) emkt.$(O) 
+     socket_err.$(O) 
 
-SRCS=$(OBJS,.o=.cpp) 
+SRCS=$(OBJS,.o=.cpp)
 
-BINS=emkt.exe
+BINS=emkt.exe test.exe
 
 
 
 all: $(BINS)
 
 
-emkt.exe: $(OBJS)
-	$(CC) -o $@ $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS)
+emkt.exe: $(OBJS) emkt.$(O)
+	$(CC) -o $@ $(CFLAGS) $(OBJS) emkt.$(O) $(LDFLAGS) $(LIBS)
+
+test.exe: $(OBJS) test.$(O)
+	$(CC) -o $@ $(CFLAGS) $(OBJS) test.$(O) $(LDFLAGS) $(LIBS)
 
 .o.c:
-	@echo "  CC $@" ; ${CC} $(CFLAGS)  -c $< 
+	@echo "  CC $@" ; ${CC} $(CFLAGS)  -c $<
 
 ${OBJS}: ${SRCS}
 

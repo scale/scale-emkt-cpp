@@ -32,41 +32,6 @@ Pointer::Pointer(const Connection_Info_t &conInfo, const char *fmt, ...){
 	vsnprintf(sql, 2047, fmt, args);
 	va_end(args);
 	
-/*
-	
-	
-	try{
-	
-		if(strlen(sql) < 5){
-			DBException dbe;
-			dbe.err_description = "Query invalida!";
-			dbe.err_id = "500";
-			throw dbe;
-		}
-	
-		database = new Database( s_CI );
-		result = database->select(sql);
-		total_record_set = mysql_num_rows(result);
-		if( total_record_set > 0 ){
-			status = true;
-			total_fields = mysql_num_fields(result);
-			if ((row = mysql_fetch_row (result)) != NULL){
-				mysql_field_seek (result, 0);
-				for (int i = 0; i < total_fields; i++){
-					mysql_fields = mysql_fetch_field (result);
-					fields[mysql_fields->name] = i;
-
-    				}
-  			}
-		}
-		posicao = 0;
-		mysql_data_seek(result, 0);
-
-	} catch(DBException dbe) {
-		throw dbe;
-	}
-*/
-
 	query(sql);
 }
 

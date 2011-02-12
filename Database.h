@@ -9,12 +9,18 @@
 extern "C" {
 #endif
 
+#if _MSC_VER > 1000
+#pragma once
+#endif // _MSC_VER > 1000
+//typedef int SOCKET; // get round windows definitions.
+
 #include <mysql/mysql.h>
 
 #ifdef  __cplusplus
 }
 #endif
 
+#include "Debug.h"
 
 /**
  * Connection pool struct.
@@ -37,6 +43,8 @@ typedef struct Connection_Info
 	}
 
 } Connection_Info_t;
+
+Connection_Info_t conn; //Struct com os dados de conexao;
 
 class DBException{
 
