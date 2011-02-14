@@ -30,7 +30,6 @@ public:
 	void eraseQueue(const char* email);
 	static void eraseQueue(const char* email, int id_peca, int id_campanha);
 	vector<Address> getEmails(int threadId);
-	static Connection_Info_t static_CI;
 	
 private:
 	virtual void* Run(void* param);
@@ -42,7 +41,6 @@ private:
 	int id_peca;
 	int id_campanha;
 	int terminate;
-	Connection_Info_t s_CI;
 	int tipo_peca;
 
 };

@@ -19,15 +19,15 @@
 #include <strings.h>
 #include <errno.h>
 
-Mailer::Mailer(const std::string& s) {
+Mailer::Mailer(const std::string& s) : server(s), port(25), lookupMXRecord(true) {
 	init(); // in win32 init networking, else just does nothin'
-	server = s
 }
 
 Mailer::~Mailer() {
 }
 
-void Mailer::html(const std::string& html) {
+void
+Mailer::html(const std::string& html) {
 
 	body_html = html;
 
@@ -38,7 +38,8 @@ void Mailer::html(const std::string& html) {
 
 // this breaks a message line up to be less than 1000 chars per line.
 // keeps words intact also.
-void Mailer::checklinesarelessthan1000chars() {
+void
+Mailer::checklinesarelessthan1000chars() {
 	int count(1);
 	for (std::vector<char>::iterator it = message.begin(); it < message.end(); ++it, ++count) {
 		if (*it == '\r') {
@@ -69,25 +70,17 @@ void Mailer::checklinesarelessthan1000chars() {
 	}
 }
 
-void Mailer::setsubject(const std::string& newSubject) {
-	if (!newSubject.length())
-		return false;
-
-	subject = newSubject;
-	return true;
+void
+Mailer::subject(const std::string& newSubject) {
+	if (newSubject.length() > 0)
+		_subject = newSubject;
 }
 
-void Mailer::from(const std::string& newsender) {
-	if (newsender.length() > 0) {
-		Address newaddress = parseaddress(newsender);
-		fromAddress = newaddress;
-	}
-}
-
-void Mailer::to(const std::string& name, const std::string& email) {
+void
+Mailer::to(const std::string& name, const std::string& email) {
 	// SMTP only allows 100 recipients max at a time.
 	// rfc821
-	if (recipients.size() >= 100) // == would be fine, but let's be stupid safe
+	if (recipients.size() >= 20) // == would be fine, but let's be stupid safe
 		return;
 
 	if (email.length()) {
@@ -99,8 +92,13 @@ void Mailer::to(const std::string& name, const std::string& email) {
 }
 
 // this is where we do all the work.
-void Mailer::send() {
+void
+Mailer::send() {
 	Debug debug("Mailer");
+
+	const std::string OK("250");
+	std::string smtpheader;
+	char buff[1024] = "";
 
 	returnstring = ""; // clear out any errors from previous use
 	m_ErrorMessages.message_error = "";
@@ -113,27 +111,18 @@ void Mailer::send() {
 		throw m_ErrorMessages;
 	}
 
-	if (fromAddress.address.length() == 0) {
+	if (fromAddress.email.length() == 0) {
 		m_ErrorMessages.message_error = "454 From email address empty";
 		m_ErrorMessages.id_error = 454;
 		returnstring = m_ErrorMessages.message_error;
 		throw m_ErrorMessages;
 	}
 
-/*
-	if (nameserver.length() == 0) {
-		m_ErrorMessages.message_error = "455 No nameserver";
-		m_ErrorMessages.id_error = 455;
-		returnstring = m_ErrorMessages.message_error;
-		throw m_ErrorMessages;
-	}
-*/
-
 	std::vector<sockaddr_in> adds;
 
 	//TODO
 	MicroDNS mdns;
-	struct mx _mx = mdns.mx( recipients.front().first.domain() );
+	struct mx _mx = mdns.mx( recipients.front().domain() );
 
 	struct sockaddr_in mx_host;
 	mx_host.sin_addr = _mx.addr;
@@ -155,7 +144,7 @@ void Mailer::send() {
 //		msg.error = 1;
 //		msg.message = "'From' email address empty";
 
-		messages.push_back(msg);
+		mensagens.push_back(msg);
 
 		throw msg;
 	}
@@ -163,12 +152,9 @@ void Mailer::send() {
 
 	SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
 
-	const std::string OK("250");
-	const std::string smtpheader(makesmtpmessage());
-	char buff[1024] = "";
-
-	for (std::vector<sockaddr_in>::const_iterator address = adds.begin(); address
-			< adds.end(); ++address) {
+	for (std::vector<sockaddr_in>::const_iterator address = adds.begin();
+			address < adds.end(); ++address)
+	{
 
 		// without the temp variable on RedHat 8.0 we get an error
 		//  i.e. this don't work:
@@ -187,19 +173,18 @@ void Mailer::send() {
 		temp_addr = &temp_in->sin_addr;
 
 		// cout << "Conectando a " << inet_ntoa(*temp_addr) << " ... ";
-		if (connect(s, &temp, sizeof(temp)) != 0) {
-
-			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr) {
-
+		if (connect(s, &temp, sizeof(temp)) != 0)
+		{
+			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
+			{
 				ResultMessage msg;
 
 				msg.error = 400;
 				msg.message = "Could not connect.";
 				msg.recipient = (*itr);
 
-				messages.push_back(msg);
+				mensagens.push_back(msg);
 			}
-			continue;
 		}
 
 		// 220 the server line returned here
@@ -207,7 +192,7 @@ void Mailer::send() {
 
 		std::ostringstream cmd;
 
-		cmd << "EHLO " << DNS::GetDomain(fromAddress.address) << std::endl;
+		cmd << "EHLO " << fromAddress.domain() << std::endl;
 
 		// say hello to the server
 		len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
@@ -218,19 +203,21 @@ void Mailer::send() {
 		returnstring = buff;
 		//debug.debug("EHLO : %s",returnstring.c_str());
 
-		if (returnstring.substr(0, 3) != OK) {
+		if (returnstring.substr(0, 3) != OK)
+		{
 			std::ostringstream cmd;
 
 			debug.error("%s", returnstring.c_str());
 
-			cmd << "HELO " << DNS::GetDomain(fromAddress.address) << std::endl;
+			cmd << "HELO " << fromAddress.domain() << std::endl;
 
-			len1 = ::send(s, cmd.str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
+			len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
 
-			if (returnstring.substr(0, 3) != OK) {
+			if (returnstring.substr(0, 3) != OK)
+			{
 				// we must issue a quit even on an error.
 				// in keeping with the rfc's
 				len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
@@ -256,30 +243,32 @@ void Mailer::send() {
 		buff[len1] = '\0';
 		returnstring = buff;
 
-		if (returnstring.substr(0, 3) != OK) {
+		if (returnstring.substr(0, 3) != OK)
+		{
 			debug.error("%s", returnstring.c_str());
 			// we must issue a quit even on an error.
 			// in keeping with the rfc's
 			len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
 			len1 = recv(s, buff, 1024, 0);
 
-			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr) {
+			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
+			{
 				ResultMessage msg;
 
 				msg.error = atoi( returnstring.substr(0, 3).c_str() );
 				msg.message = returnstring;
 				msg.recipient = (*itr);
 
-				messages.push_back(msg);
+				mensagens.push_back(msg);
 			}
 
 			Closesocket(s);
-			continue;
 		}
 
 		bool algumOK = false;
 
-		for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr) {
+		for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
+		{
 			// RCPT
 			// S: RCPT TO:<Jones@Beta.ARPA>
 			// R: 250 OK
@@ -313,16 +302,16 @@ void Mailer::send() {
 					m_ErrorMessages.id_email_error.push_back( atoi((returnstring.substr(0,3)).c_str()) );
 				else
 					m_ErrorMessages.id_email_error.push_back( 511 );
-				m_ErrorMessages.emails_error.push_back((*recip).first.address);
 
+				m_ErrorMessages.emails_error.push_back((*itr));
 				continue;
 			}
 
 			//SUCESSO ao adicionar o destinatario
 			m_ErrorMessages.id_email_error.push_back(255);
-			m_ErrorMessages.emails_error.push_back((*recip).first.address);
-                }
-			debug.debug("RCPT %s: %s", (*itr).email, returnstring.c_str());
+			m_ErrorMessages.emails_error.push_back((*itr));
+
+			debug.debug("RCPT %s: %s", (*itr).email.c_str(), returnstring.c_str());
 
 			ResultMessage msg;
 
@@ -330,9 +319,10 @@ void Mailer::send() {
 			msg.message = returnstring;
 			msg.recipient = (*itr);
 
-			messages.push_back(msg);
+			mensagens.push_back(msg);
 
-			if (returnstring.substr(0, 3) != OK) {
+			if (returnstring.substr(0, 3) != OK)
+			{
 				debug.error("%s", returnstring.c_str());
 				// This particular recipient does not exist!
 				// not strictly an error as we may have more than one recipient
@@ -348,7 +338,8 @@ void Mailer::send() {
 			}
 		}
 
-		if (!algumOK) {
+		if (!algumOK)
+		{
 			len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
@@ -381,12 +372,12 @@ void Mailer::send() {
 			returnstring = buff;
 			debug.debug("Problemas no comando DATA: %s", returnstring.c_str());
 
-			ResultMessage msg;
-			msg.error = atoi( returnstring.substr(0, 3).c_str() );
-			msg.message = returnstring;
-			msg.recipient = (*itr);
-
-			messages.push_back(msg);
+//			ResultMessage msg;
+//			msg.error = atoi( returnstring.substr(0, 3).c_str() );
+//			msg.message = returnstring;
+//			msg.recipient = *itr;
+//
+//			mensagens.push_back(msg);
 
 			Closesocket(s);
 			break;
@@ -411,28 +402,33 @@ void Mailer::send() {
 	}
 }
 
-std::string Mailer::makesmtpmessage() const {
+std::string
+Mailer::makesmtpmessage() const {
 	std::ostringstream os;
 	QuotedPrintable qp;
 
 
-	std::string sender(fromAddress.address);
+	std::string sender(fromAddress.email);
 
-	if (sender.length()) {
+	if (sender.length())
+	{
 		std::string::size_type pos(sender.find("@"));
-		if (pos != std::string::npos) { //found the server beginning
+		if (pos != std::string::npos)
+		{ //found the server beginning
 			sender = sender.substr(0, pos);
 		}
 	}
 	std::string smtpheader;
-	if (fromAddress.name.length()) {
+	if (fromAddress.name.length())
+	{
 		os << "From: \"" << fromAddress.name << "\" <" + fromAddress.email << ">" << std::endl;
 	} else {
 		os << "From: <" + fromAddress.email << ">" << std::endl;
 	}
 
 	// add the recipients to the header
-	if (recipients.size() == 1) {
+	if (recipients.size() == 1)
+	{
 		Address r = recipients[0];
 		os << "To: \"" << r.name << "\" <" << r.email << ">" << std::endl;
 	} else {
@@ -441,7 +437,6 @@ std::string Mailer::makesmtpmessage() const {
 
 
 	std::string boundary("----=_NextPart_AUTHORIZED_EMAIL");
-	bool MIME(true);
 
 	os << "MIME-Version: 1.0" << std::endl;
 
@@ -460,7 +455,7 @@ std::string Mailer::makesmtpmessage() const {
 	os << "Date: " << buff << std::endl;
 
 	// add the subject
-	os << "Subject: =?iso-8859-1?Q?" << qp.Encode(subject()) << "?=" << std::endl;
+	os << "Subject: =?iso-8859-1?Q?" << qp.Encode(_subject) << "?=" << std::endl;
 
 	os << "Content-Type: multipart/alternative; boundary=\"" << boundary << "\"" << std::endl;
 
@@ -504,7 +499,7 @@ std::string Mailer::makesmtpmessage() const {
 	os << std::endl;
 	os << "." << std::endl;
 
-	return os.str();
+	return os.str().c_str();
 }
 
 
@@ -552,6 +547,4 @@ void Mailer::Closesocket(const SOCKET& s) {
 #endif
 }
 
-void Mailer::substitute(const std::string& name, const std::string value) {
-	macros[name] = value;
-}
+

@@ -28,6 +28,44 @@ typedef int SOCKET; // get round windows definitions.
 #include <string>
 #include "Debug.h"
 
+// email address wrapper struct
+class Address {
+public:
+	std::string id;
+	std::string name;    // e.g.   freddy foobar
+	std::string email; // e.g.   someone@mail.com
+
+	std::string domain() {
+		size_t pos = email.find("@");
+		return email.substr(pos+1);
+	}
+
+	Address & operator =( const Address &other) {
+		id = other.id;
+		name = other.name;
+		email = other.email;
+		return *this;
+	}
+};
+
+class ResultMessage {
+public:
+	Address recipient;
+	std::string message;
+	int error;
+};
+
+struct _error_messages {
+	std::vector<Address> emails_error;
+	std::vector<int> id_email_error;
+
+	std::string message_error;
+	int id_error;
+};
+typedef struct _error_messages ErrorMessages_t;
+
+
+
 class Mailer {
 
 public:
@@ -38,20 +76,15 @@ public:
 
 	// Set a new Subject for the mail (replacing the old)
 	// will return false if newSubject is empty.
-	void subject(const std::string& newSubject) { _subject = newSubject; } ;
-	const std::string subject() { return _subject; } ;
+	void subject(const std::string& newSubject);
+	const std::string& subject() { return _subject; } ;
 
 	// sets the senders address (fromAddress variable)
-	void from(const std::string& from) { fromAddress.email = from; fromAddress.name=""; };
+	void from(const std::string& from) { fromAddress = parseaddress(from); };
 	void from(const Address& addr) { fromAddress = addr; };
 
 	void to(const Address& addr) { recipients.push_back(addr); };
-	void to(const std::string& name, const std::string& email) {
-		Address addr;
-		addr.name = name;
-		addr.email = email;
-		recipients.push_back(addr);
-	};
+	void to(const std::string& name, const std::string& email);
 
 
 	// returns the return code sent by the smtp server or a local error.
@@ -61,12 +94,12 @@ public:
 	const std::string& response() const { return returnstring; };
 
 	//Para inserir o conteudo TEXT
-	void text(const char* text) { body_text = text; };
+	void text(const std::string& text) { body_text = text; };
 	//Para inserir o conteudo HTML
-	void html(const char* html) { body_html = html; };
+	void html(const std::string& html);
 
 	//Para devolver o struct que conetem os erros elvantados durante a entrea do email
-	std::vector<ResultMessage> getErrorMessages() { return mensagens; };
+	std::vector<ResultMessage>& getErrorMessages() { return mensagens; };
 
 private:
         // create a header with current message and attachments.
@@ -102,17 +135,6 @@ private:
         // wrapper for closesocket...windows & close...unix
         void Closesocket(const SOCKET& s);
 
-        // email address wrapper struct
-        struct Address {
-                std::string name;    // e.g.   freddy foobar
-                std::string address; // e.g.   someone@mail.com
-
-		std::string domain() {
-			size_t pos = address.find("@");
-			return address.substr(pos+1);
-		}
-        };
-
         // less typing later, these are definately abominations!
         typedef std::vector<std::pair<std::vector<char>, std::string> >::const_iterator vec_pair_char_str_const_iter;
         typedef std::vector<std::pair<Address, short> >::const_iterator recipient_const_iter;
@@ -126,14 +148,16 @@ private:
         Address parseaddress(const std::string& addresstoparse);
 
         // The addresses to send the mail to
-        std::vector<std::pair<Address, short> > recipients;
+        std::vector<Address> recipients;
         // The address the mail is from.
         Address fromAddress;
 
-	string errors_toAddress;
+        string errors_toAddress;
+
+        std::vector<ResultMessage> mensagens;
 
         // Subject of the mail
-        std::string subject;
+        std::string _subject;
         // Corpo em texto
         std::string body_text;
 	// Corpo em HTML
@@ -157,8 +181,8 @@ private:
 
 	ErrorMessages_t m_ErrorMessages;
 
-        // filled in with server return strings
-        std::string returnstring;
+	// filled in with server return strings
+	std::string returnstring;
 /*
 	void checklinesarelessthan1000chars();
 
@@ -166,15 +190,6 @@ private:
 	void init() const;
 	// wrapper for closesocket...windows & close...unix
 	void closesocket(const SOCKET& s);
-
-	// The addresses to send the mail to
-	std::vector<Address> recipients;
-	// The address the mail is from.
-	Address fromAddress;
-
-	std::string _subject;
-	std::string body_text;
-	std::string body_html;
 
 	// This will be filled in from the toAddress by getserveraddress
 	std::string server;

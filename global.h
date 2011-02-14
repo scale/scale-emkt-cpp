@@ -43,32 +43,6 @@ using namespace std;
 
 typedef vector<string> vString;
 
-#ifndef ADDRESS_H_
-#define ADDRESS_H_
-
-class Address {
-public:
-	std::string id;
-	std::string name; // e.g.   freddy foobar
-	std::string email; // e.g.   someone@mail.com
-
-	Address & operator =( const Address &other) {
-		id = other.id;
-		name = other.name;
-		email = other.email;
-		return *this;
-	}
-};
-
-#endif // _ADDRESS_H
-
-class ResultMessage {
-public:
-	Address recipient;
-	std::string message;
-	int error;
-};
-
 std::string DNS = "";
 int INSTANCE_NUM = 1;
 

@@ -21,7 +21,7 @@ const int daysInMonth[][13] = {
     {0,31,28,31,30,31,30,31,31,30,31,30,31},
     {0,31,29,31,30,31,30,31,31,30,31,30,31}};
 inline bool isleap(int y) {
-return (y%4 == 0) && (y%100 != 0) || (y%400 == 0);
+return ((y%4 == 0) && (y%100 != 0)) || (y%400 == 0);
   }
 }
 
@@ -135,8 +135,8 @@ int years = y2 - y1;
 int months = m2 - m1;
 int days = d2 - d1;
   assert(years > 0 ||
-     years == 0 && months > 0 ||
-     years == 0 && months == 0 && days > 0);
+     (years == 0 && months > 0) ||
+     (years == 0 && months == 0 && days > 0) );
 
 // Do the obvious corrections (must adjust days
 // before months!) - This is a loop in case the

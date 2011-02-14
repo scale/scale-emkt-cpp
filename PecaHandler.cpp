@@ -15,10 +15,10 @@
 #include <memory>
 using namespace std;
 
-PecaHandler::PecaHandler(int peca, int campanha) : database(conn) {
+PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1) : database(conn) {
 	mutex.Acquire();
 
-	dead = false;
+	_dead = false;
 	SetThreadID(peca + campanha * 100);
 	id_peca = peca;
 	id_campanha = campanha;
@@ -31,7 +31,7 @@ PecaHandler::PecaHandler(int peca, int campanha) : database(conn) {
 
 PecaHandler::~PecaHandler() {
 	Stop();
-	dead = true;
+	_dead = true;
 }
 
 void PecaHandler::init() {
@@ -56,8 +56,6 @@ void* PecaHandler::Run(void* param) {
 
 	int num_threads = 0; //Numero de threads rodando
 	int vez = 0;
-
-	emailSource_t esTemp[MAX_THREADS_ENVIO];
 
 	init();
 
@@ -95,7 +93,7 @@ void* PecaHandler::Run(void* param) {
 		} else {
 			setRunning(false);
 			debug.info("Nao ha pecas para campanha %d", id_campanha);
-			dead = true;
+			_dead = true;
 			return NULL;
 		}
 
@@ -117,7 +115,7 @@ void* PecaHandler::Run(void* param) {
 
 	} catch (DBException dbe) {
 		debug.error("%s", dbe.err_description.c_str());
-		dead = true;
+		_dead = true;
 		return NULL;
 	}
 

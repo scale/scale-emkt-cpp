@@ -25,7 +25,7 @@ public:
 	PecaHandler(int peca, int campanha, int total_emails = 1);
 	~PecaHandler();
 
-	bool dead() { return dead; }
+	bool dead() { return _dead; }
 
 private:
 	virtual void* Run(void*);
@@ -38,11 +38,11 @@ private:
 	int id_campanha;
 	int total_emails;
 
-	bool dead;
+	bool _dead;
 
 	Database database;
 
-	map<string, vector< auto_ptr<Sender> > > servidoresMX;
+	map<string, vector<Sender> > servidoresMX;
 };
 
 

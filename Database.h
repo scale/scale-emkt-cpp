@@ -34,7 +34,7 @@ public:
 
 	void executeQuery(const char *fmt, ...);
 	MYSQL_RES* select(const char *fmt, ...);
-	const char* getError();
+	std::string getError();
 	DBException getLastError();
 	void freeResult();
 

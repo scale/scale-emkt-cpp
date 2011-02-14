@@ -13,19 +13,10 @@
 #include <sstream>
 
 
-QueueManager::QueueManager(Connection_Info_t* s_ConInfo, int peca, int campanha, int total_emails, int tpeca){
+QueueManager::QueueManager(int peca, int campanha, int total_emails, int tpeca)
+{
+	database = new Database();
 	
-	s_CI.host = s_ConInfo->host;
-	s_CI.user = s_ConInfo->user;
-	s_CI.pass = s_ConInfo->pass;
-	s_CI.db   = s_ConInfo->db;
-	
-	Database::host = s_ConInfo->host.c_str();
-	Database::user = s_ConInfo->user.c_str();
-	Database::pass = s_ConInfo->pass.c_str();
-	Database::db   = s_ConInfo->db.c_str();
-
-	database = new Database(s_CI);
 	block_size = total_emails;
 	
 	id_peca = peca;
@@ -34,27 +25,25 @@ QueueManager::QueueManager(Connection_Info_t* s_ConInfo, int peca, int campanha,
 	tipo_peca = tpeca;
 
 	debug = new Debug("QueueManager");
-
-
-///// QueueManager::QueueManager() : database(conn) {
-	
 }
+
 
 QueueManager::~QueueManager() {
 	Stop();
 }
 
-void* QueueManager::Run(void* param) {
-
+void*
+QueueManager::Run(void* param)
+{
 	while (1) {
-
 		debug.info("Queueing...");
 		sleep(30);
 	}
 }
 
-bool QueueManager::returnQueue(){
-
+bool
+QueueManager::returnQueue()
+{
 	try{
 		result = database->select("select id_peca from EmktPeca where date_add(data_enviar, "
 						"INTERVAL 5 DAY) > now() and id_peca='%d' and"
@@ -97,7 +86,9 @@ bool QueueManager::returnQueue(){
 }
 
 
-void QueueManager::statsInsert(const char* email, int code){
+void
+QueueManager::statsInsert(const char* email, int code)
+{
 	try{
 		db.executeQuery("replace into EmktStatsEnvio "
 				"(id_peca,id_campanha,error_code,email,enviado) "
@@ -108,7 +99,9 @@ void QueueManager::statsInsert(const char* email, int code){
 	} 
 }
 
-void QueueManager::statsInsert(const char* email, int code, const std::string& mensagem, int id_peca, int id_campanha){
+void
+QueueManager::statsInsert(const char* email, int code, const std::string& mensagem, int id_peca, int id_campanha)
+{
 	try{
 		db.executeQuery("replace into EmktStatsEnvio "
 				"(id_peca,id_campanha,error_code,email,enviado)" 
@@ -128,7 +121,9 @@ void QueueManager::statsInsert(const char* email, int code, const std::string& m
 }
 
 
-void QueueManager::eraseQueue(const char* email){
+void
+QueueManager::eraseQueue(const char* email)
+{
 	try{
 		db.executeQuery("delete from "
 						"EmktFilaEnvioPeca where "
@@ -139,8 +134,9 @@ void QueueManager::eraseQueue(const char* email){
 	}
 }
 
-void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha){
-
+void
+QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha)
+{
 	Database db;
 	try{
 		db.executeQuery("delete from EmktFilaEnvioPeca where id_campanha='%d' and id_peca='%d' and email = '%s'",
@@ -151,13 +147,14 @@ void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha){
 	}
 }
 
-vDadosPessoa QueueManager::getEmails(int threadId){
-
+vDadosPessoa
+QueueManager::getEmails(int threadId)
+{
 	vDadosPessoa listEmails;
 
 	try{
 	
-		Pointer pointer(conn,
+		Pointer pointer(
 			"select *,dominio(email) as domain "
 			"from EmktFilaEnvioPeca where id_peca='%d' "
 			"and id_campanha='%d' and (stats='0') "
@@ -252,7 +249,6 @@ vDadosPessoa QueueManager::getEmails(int threadId){
 		debug->error("QUEUE MGR. EXCEPTION || %s!", dbe.err_description.c_str());
 		throw dbe;
 	}
-
 
 	return listEmails;
 

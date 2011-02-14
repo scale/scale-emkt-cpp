@@ -91,8 +91,14 @@ int MicroDNS::getmxip(const char *domain, struct in_addr *ip) {
 	if (ret < 0) {
 		mxrecs = (struct mx *) malloc(sizeof(struct mx));
 		mxrecs[0].prio = 0;
-		strcpy(mxrecs[0].host, domain);
-		h = gethostbyname(domain);
+
+		if (domain != NULL && strlen(domain) > 0) {
+			strcpy(mxrecs[0].host, domain);
+			h = gethostbyname(domain);
+		} else {
+			strcpy(mxrecs[0].host, "localhost");
+			h = gethostbyname("localhost");
+		}
 
 		if (!h) {
 			switch (h_errno) {

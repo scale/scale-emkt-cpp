@@ -24,9 +24,7 @@
 class Sender: public Thread {
 
 public:
-	Sender(const std::string& server, const Peca& peca) : mailer(server) {
-		this->peca = peca;
-		this->server = server;
+	Sender(const std::string& srv, const Peca& p) : server(srv), mailer(srv), peca(p) {
 		setRunning(false);
 	}
 
@@ -39,8 +37,6 @@ public:
 	}
 
 	void add_recipient(const Address& rcpt);
-	void substitute(const std::string& name, const std::string value) {};
-
 
 private:
 	virtual void* Run(void*);

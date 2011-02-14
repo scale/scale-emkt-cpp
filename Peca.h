@@ -14,10 +14,10 @@ public:
 	virtual ~Peca();
 	bool isValida();
 
-	string from;
-	string subject;
-	string html;
-	string txt;
+	std::string from;
+	std::string subject;
+	std::string html;
+	std::string txt;
 
 	int pecaId;
 	int campanhaId;

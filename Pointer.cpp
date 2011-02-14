@@ -9,22 +9,14 @@
  ***************************************************************************/
 
 #include "Pointer.h"
-#include <iostream>
-
 
 
 /* Construtor da Classe ponteiro, responsavel por percorrer os dados do result.
  * @param const char* O comando sql que devera ser percorrido
  * @throw DBException
  */
-Pointer::Pointer(const Connection_Info_t &conInfo, const char *fmt, ...){
-
-	//Atribuindo a uma variavel membra da classe
-	s_CI.host=conInfo.host;
-	s_CI.user=conInfo.user;
-	s_CI.pass=conInfo.pass;
-	s_CI.db=conInfo.db;
-
+Pointer::Pointer(const char *fmt, ...)
+{
 	//pegando a query
    	char sql[2048];
 	va_list args;
@@ -35,10 +27,22 @@ Pointer::Pointer(const Connection_Info_t &conInfo, const char *fmt, ...){
 	query(sql);
 }
 
+/* Destrutora */
+Pointer::~Pointer()
+{
+	if( database != NULL){
+		delete database;
+		database = NULL;
+	}
 
-void Pointer::query(const char *fmt, ...) {
-	
+}
+
+
+void
+Pointer::query(const char *fmt, ...)
+{
 	char sql[2048];
+	
 	va_list args;
 	va_start(args, fmt);
 	vsnprintf(sql, 2047, fmt, args);
@@ -57,22 +61,24 @@ void Pointer::query(const char *fmt, ...) {
 	
 		debug.debug(sql);
 		
-		database = new Database( s_CI );
+		database = new Database();
 		result = database->select(sql);
+
 		total_record_set = mysql_num_rows(result);
 		if( total_record_set > 0 ){
 			status = true;
 			total_fields = mysql_num_fields(result);
-			if ((row = mysql_fetch_row (result)) != NULL){
+			if ((row = mysql_fetch_row (result)) != NULL)
+			{
 				mysql_field_seek (result, 0);
-				for (int i = 0; i < total_fields; i++){
+				for (int i = 0; i < total_fields; i++)
+				{
 					mysql_fields = mysql_fetch_field (result);
 					fields[mysql_fields->name] = i;
-
-    				}
+   				}
   			}
 		}
-		posicao = 0;
+		_posicao = 0;
 		mysql_data_seek(result, 0);
 
 	} catch(DBException dbe) {
@@ -81,21 +87,12 @@ void Pointer::query(const char *fmt, ...) {
 }
 
 
-/* Destrutora */
-Pointer::~Pointer()
-{
-	if( database != NULL){
-		delete(database);
-		database = NULL;
-	}
-
-}
-
 /* Busca o campo pelo nome
  * @param const char* com o nome do campo
  */
-const char* Pointer::get(const char* field){
-	
+std::string
+Pointer::get(const char* field)
+{
 	if(row != NULL){
 		return (row[fields[field]] ? row[fields[field]] : "");
 	}
@@ -107,10 +104,12 @@ const char* Pointer::get(const char* field){
 /* correndo o cursos para a proxima posicao
  * @throw DBException
  */
-bool Pointer::next(){
+bool
+Pointer::next()
+{
 
 	if( ( row = mysql_fetch_row(result)) != NULL ){
-		posicao++;
+		_posicao++;
 		return true;
 	} else
 		return false;
@@ -118,19 +117,17 @@ bool Pointer::next(){
 }
 
 
-bool Pointer::getNext(){
-	next();
-}
-
-
-int Pointer::getTotal(){
+int
+Pointer::total()
+{
 	return total_record_set;
-
 }
 
 
-bool Pointer::firstRecord(){
-	posicao = 0;
+bool
+Pointer::first()
+{
+	_posicao = 0;
 	mysql_data_seek(result, 0);
 	if( (row = mysql_fetch_row (result)) != NULL )
 		return false;
@@ -139,8 +136,10 @@ bool Pointer::firstRecord(){
 }
 
 
-bool Pointer::lastRecord(){
-	posicao = total_record_set - 1;
+bool
+Pointer::last()
+{
+	_posicao = total_record_set - 1;
 	mysql_data_seek(result, (total_record_set-1));
 	if( (row = mysql_fetch_row (result)) != NULL )
 		return false;
@@ -148,15 +147,17 @@ bool Pointer::lastRecord(){
 	return true;
 }
 
-int Pointer::getPosicao(){
-	return posicao;
-
+int
+Pointer::posicao()
+{
+	return _posicao;
 }
 
 
-bool Pointer::backRecord(){
-	posicao--;
-	mysql_data_seek(result, posicao);
+bool Pointer::back()
+{
+	_posicao--;
+	mysql_data_seek(result, _posicao);
 
 	return true;
 }

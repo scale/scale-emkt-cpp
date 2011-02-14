@@ -25,49 +25,45 @@ Debug::~Debug(){
 
 bool Debug::Log(const char *fmt, ...)
 {
-    	char log_text[2048];
 	va_list args;
-        va_start(args, fmt);
-        vsyslog(LOG_INFO, fmt, args);
-        va_end(args);
+	va_start(args, fmt);
+	vsyslog(LOG_INFO, fmt, args);
+	va_end(args);
 
 	return true;
 }
 
 void Debug::info(const char *fmt, ...)
 {
-    	char log_text[2048];
 	va_list args;
-        va_start(args, fmt);
-        //vsnprintf(log_text, 2047, fmt, args);
+	va_start(args, fmt);
 	vsyslog(LOG_INFO, fmt, args);
-        va_end(args);
+	va_end(args);
 }
 
 
 
-void Debug::debug(const char *fmt, ...){
-	char log_text[2048];
+void Debug::debug(const char *fmt, ...)
+{
 	va_list args;
-        va_start(args, fmt);
-        //vsnprintf(log_text, 2047, fmt, args);
+	va_start(args, fmt);
 	vsyslog(LOG_DEBUG, fmt, args);
-        va_end(args);
+	va_end(args);
 }
 
-void Debug::error(const char *fmt, ...){
-	char log_text[2048];
+void Debug::error(const char *fmt, ...)
+{
 	va_list args;
-        va_start(args, fmt);
+	va_start(args, fmt);
 	vsyslog(LOG_ERR, fmt, args);
-        va_end(args);
+	va_end(args);
 }
 
-void Debug::warn(const char *fmt, ...){
-	char log_text[2048];
+void Debug::warn(const char *fmt, ...)
+{
 	va_list args;
-        va_start(args, fmt);
+	va_start(args, fmt);
 	vsyslog(LOG_WARNING, fmt, args);
-        va_end(args);
+	va_end(args);
 }
 

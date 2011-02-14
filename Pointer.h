@@ -12,7 +12,10 @@
 
 #include "Database.h"
 #include "global.h"
+
 #include <map>
+#include <string>
+#include <iostream>
 
 struct ltstr
 {
@@ -34,30 +37,27 @@ private:
 	MYSQL_RES* field;
 	MYSQL_FIELD* mysql_fields;
 	MYSQL_ROW row;
-	Connection_Info_t s_CI;
 	CharIntMap fields;
 	int total_fields;
 	int total_record_set;
-	int posicao;
+	int _posicao;
 	bool status;
 
 public:
 
-	Pointer(const Connection_Info_t &conInfo, const char *fmt, ...);
+	Pointer(const char *fmt, ...);
     ~Pointer();
 
-    const char* get(const char* field);
+    std::string& get(const char* field);
     bool next();
-    bool getNext();
-    int getTotal();
-    bool firstRecord();
-    bool lastRecord();
-	int getPosicao();
-	bool setPosicao(const int* pos);
-	bool backRecord();
+    int total();
+    bool first();
+    bool last();
+	int posicao();
+	bool posicao(const int pos);
+	bool back();
+
 	void query(const char *fmt, ...);
-
-
 };
 
 

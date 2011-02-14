@@ -11,169 +11,105 @@
 #include <iostream>
 #include <string.h>
 
-
-
-std::string Database::host = "";
-std::string Database::user = "";
-std::string Database::pass = "";
-std::string Database::db   = "";
-
-
 /** Constructor which does nothing.
-*/
-Database::Database(void) {
+ */
+Database::Database() {
 	connection = NULL;
 	conn_status = false;
 
 	int dados_conexao = 0;
 	debug = new Debug("Database");
 
-	if(host.length() < 1 &&
-		pass.length() < 1 &&
-		db.length() < 1 &&
-		user.length() < 1 ){
-	        std::ifstream hfile(CONF_DIR);
-	
+	if (host.length() < 1 && pass.length() < 1 && db.length() < 1
+			&& user.length() < 1) {
+		std::ifstream hfile(CONF_DIR);
+
 		int dados_conexao = 0;
 		std::string temp;
-        	while ( !hfile.eof() ) {
-	    	getline(hfile, temp);
-	
-	    	if(temp.find("database") == 0){
-                	connectionInfo.db = temp.substr( temp.find("=")+1, temp.length() );
-	                dados_conexao++;
-            	}
-	
-	    	if(temp.find("host") == 0){
-	        	connectionInfo.host = temp.substr( temp.find("=")+1, temp.length() );
-			dados_conexao++;
-            	}
-	
-	    	if(temp.find("user") == 0){
-	        	connectionInfo.user = temp.substr( temp.find("=")+1, temp.length() );
-			dados_conexao++;
-	    	}
-	
-	    	if(temp.find("pass") == 0){
-	        	connectionInfo.pass = temp.substr( temp.find("=")+1, temp.length() );
-			dados_conexao++;
-		    }
-        	}
-	} else {
-		//cout << "Aproveitou os dadods de conexão!" << endl;
-		connectionInfo.db   = db;
-		connectionInfo.user = user;
-		connectionInfo.pass = pass;
-		connectionInfo.host = host;
-		dados_conexao = 4;
-	}
+		while (!hfile.eof()) {
+			getline(hfile, temp);
 
+			if (temp.find("database") == 0) {
+				db = temp.substr(temp.find("=") + 1, temp.length());
+				dados_conexao++;
+			}
+
+			if (temp.find("host") == 0) {
+				host = temp.substr(temp.find("=") + 1, temp.length());
+				dados_conexao++;
+			}
+
+			if (temp.find("user") == 0) {
+				user = temp.substr(temp.find("=") + 1, temp.length());
+				dados_conexao++;
+			}
+
+			if (temp.find("pass") == 0) {
+				pass = temp.substr(temp.find("=") + 1, temp.length());
+				dados_conexao++;
+			}
+		}
+	}
 
 	result = NULL;
 
-	if(dados_conexao > 0 ){	
-	
-		try{
-		
+	if (dados_conexao > 0) {
+		try {
 			connect();
-
-
-		} catch (DBException dbe){
+		} catch (DBException dbe) {
 			throw dbe;
 		}
 
-	} else { 
+	} else {
 		DBException dbe;
-        	dbe.err_description = "Dados insuficiente para conectar!";
+		dbe.err_description = "Dados insuficientes para conectar!";
 		dbe.err_id = "CONEXAO";
-
-        	throw dbe;// Erro ao executar o comando
-
-	}
-
-}
-
-/**
- * The real constructor for this class.
- * @param ci_t Dados para conexao
-*/
-Database::Database(Connection_Info_t &ci_t) {
-	conn_status = false;
-	/*connectionInfo.host=ci_t.host;
-	connectionInfo.user=ci_t.user;
-	connectionInfo.pass=ci_t.pass;
-	connectionInfo.db=ci_t.db;
-	*/
-	connectionInfo = ci_t;
-	
-	result = NULL;
-
-	debug = new Debug("Database");
-	
-	try{
-		
-		connect();
-
-	} catch (DBException dbe){
-		throw dbe;
+		throw dbe;// Erro ao executar o comando
 	}
 }
 
 /**
  * Destrutora fecha a conexao e o resultset
-*/
-Database::~Database(){
+ */
+Database::~Database() {
 
-	if( result != NULL && result > 0 ){
+	if (result != NULL && result > 0) {
 		mysql_free_result(result);
 		result = NULL;
 	}
-	if( connection != NULL){
+	if (connection != NULL) {
 		mysql_close(connection);
 		connection = NULL;
 	}
 
-	if (debug != NULL) delete debug;
+	if (debug != NULL)
+		delete debug;
 }
 
 //Limpa o ponteiro com o banco da var membra result
-void Database::freeResult(){
-	if( result != NULL && result > 0 ){
+void Database::freeResult() {
+	if (result != NULL && result > 0) {
 		mysql_free_result(result);
 		result = NULL;
 	}
 
 }
-
-
-/**
- * Definindo os parametros para conexao
- * @param ci_t Dados para conexao
-*/
-void Database::setConnectionInfo(Connection_Info_t &ci_t){
-
-	connectionInfo = ci_t;
-
-}
-
-
 
 /*
  * rotina para conectar-se a uma Database
  * @return bool retorna se houve sucesso ou nao;
  * @throw DBExcption
  */
-void Database::connect(){
+void Database::connect() {
 
-	if(strlen((connectionInfo.host).c_str()) < 1 ){
+	if (strlen(host.c_str()) < 1) {
 		DBException dbe;
 		dbe.err_description = "O host nao foi indicado corretamente";
 		dbe.err_id = "DADOS";
 		throw dbe;
-
 	}
 
-	if(strlen((connectionInfo.user).c_str()) < 1 ){
+	if (strlen(user.c_str()) < 1) {
 		DBException dbe;
 		dbe.err_description = "O user nao foi indicado corretamente";
 		dbe.err_id = "DADOS";
@@ -181,7 +117,7 @@ void Database::connect(){
 
 	}
 
-	if(strlen((connectionInfo.pass).c_str()) < 1 ){
+	if (strlen(pass.c_str()) < 1) {
 		DBException dbe;
 		dbe.err_description = "O pass nao foi indicado corretamente";
 		dbe.err_id = "DADOS";
@@ -189,7 +125,7 @@ void Database::connect(){
 
 	}
 
-	if(strlen((connectionInfo.db).c_str()) < 1 ){
+	if (strlen(db.c_str()) < 1) {
 		DBException dbe;
 		dbe.err_description = "O db nao foi indicado corretamente";
 		dbe.err_id = "DADOS";
@@ -197,151 +133,116 @@ void Database::connect(){
 
 	}
 
-
-
 	mysql_init(&mysql);
 
-	mysql_real_connect(&mysql,connectionInfo.host.c_str(),connectionInfo.user.c_str(),connectionInfo.pass.c_str(),connectionInfo.db.c_str(),0,NULL,0);
+	mysql_real_connect(&mysql, host.c_str(), user.c_str(), pass.c_str(), db.c_str(), 0, NULL, 0);
 	connection = &mysql;
-	
-/*	if(mysql_real_connect(&mysql,connectionInfo.host.c_str(),connectionInfo.user.c_str(),connectionInfo.pass.c_str(),connectionInfo.db.c_str(),0,NULL,0)){
-		DBException dbe;
-        	//dbe.err_description = mysql_error(connection);
-        	dbe.err_description = (connectionInfo.host+" | "+connectionInfo.user+" | "+connectionInfo.pass+" | "+connectionInfo.db).c_str();
-                dbe.err_id = "DB";
 
-                throw dbe;// Erro ao executar o comando
-	}
-*/		
-	//connection = mysql_connect(&mysql,connectionInfo.host.c_str(),connectionInfo.user.c_str(),connectionInfo.pass.c_str());
-
-	if( connection == NULL ) {
+	if (connection == NULL) {
 		DBException dbe;
-        	dbe.err_description = "O Mysql nao aceitou, ou nao esta aceitando a conexao!";
+		dbe.err_description
+				= "O Mysql nao aceitou, ou nao esta aceitando a conexao!";
 		dbe.err_id = "CONEXAO";
 
-        	throw dbe;// Erro ao executar o comando
-    	}
-
-        if (mysql_select_db(&mysql,connectionInfo.db.c_str())){
-		DBException dbe;
-        	dbe.err_description = mysql_error(connection);
-		dbe.err_id = "DB";
-
-        	throw dbe;// Erro ao executar o comando
+		throw dbe;// Erro ao executar o comando
 	}
 
+	if (mysql_select_db(&mysql, db.c_str())) {
+		DBException dbe;
+		dbe.err_description = mysql_error(connection);
+		dbe.err_id = "DB";
+
+		throw dbe;// Erro ao executar o comando
+	}
 
 	conn_status = true;
 
 }
 
-
 /* retorna se ha algum erro caso contrario retorna "" */
-const char* Database::getError(){
+std::string Database::getError() {
 	return mysql_error(connection);
-
 
 }
 
-
-void Database::executeQuery(const char *fmt, ...){
-    	char *sql;
+void Database::executeQuery(const char *fmt, ...) {
+	char *sql;
 	int count;
 	va_list args;
 
-	if(!fmt){
-		DBException dbe;
-		dbe.err_description = "nao foi passado o comando sql a ser executado";
-		throw dbe;
+	if (!fmt) return;
 
-	}
-        va_start(args, fmt);
-	
+	va_start(args, fmt);
 	count = vsnprintf(NULL, 0, fmt, args);
+	sql = (char *) malloc(count + 1);
 
-  	sql = (char *)malloc(count+1);
+	va_start(args, fmt);
+	vsnprintf(sql, count + 1, fmt, args);
+	va_end(args);
 
-	va_start(args,fmt);
-
-	vsnprintf(sql,count+1,fmt,args);
-
-  	va_end(args);
-
-
-	
-	if( conn_status == false){ // Caso nao esteja conectado tenta conectar
-		try{
+	if (conn_status == false) { // Caso nao esteja conectado tenta conectar
+		try {
 			connect();
-
-		} catch (DBException dbe){
-
+		} catch (DBException dbe) {
 			throw dbe;
 		}
 	}
 
 	debug->debug("%s", sql);
 
-	if( connection != NULL && mysql_query(connection,sql) != 0) {
-	
+	if (connection != NULL && mysql_query(connection, sql) != 0) {
+
 		DBException dbe;
-        	dbe.err_description = mysql_error(connection);
+		dbe.err_description = mysql_error(connection);
 		dbe.err_id = "QUERY";
 		free(sql);
-        	throw dbe;// Erro ao executar o comando
+		throw dbe;// Erro ao executar o comando
 
-    	} 
+	}
 
 	free(sql);
-	
 }
 
+MYSQL_RES* Database::select(const char *fmt, ...) {
 
-MYSQL_RES* Database::select(const char *fmt, ...){
-
-    	char sql[2048];
+	char sql[2048];
 	va_list args;
 
-	if(!fmt)
-		return NULL;
+	if (!fmt) return NULL;
 
-        va_start(args, fmt);
+	va_start(args, fmt);
+	vsnprintf(sql, 2047, fmt, args);
+	va_end(args);
 
-        vsnprintf(sql, 2047, fmt, args);
-	
-       va_end(args);
-	
-	if(conn_status == false){ // Caso nao esteja conectado tenta conectar
-		try{
+	if (conn_status == false) { // Caso nao esteja conectado tenta conectar
+		try {
 			connect();
-
-		} catch (DBException dbe){
+		} catch (DBException dbe) {
 			throw dbe;
 		}
 	}
 
-	if( connection != NULL && mysql_query(connection,sql) != 0 ) {
+	if (connection != NULL && mysql_query(connection, sql) != 0) {
 		DBException dbe;
-        	dbe.err_description = mysql_error(connection);
+		dbe.err_description = mysql_error(connection);
 		dbe.err_id = "QUERY";
 
-        	throw dbe;// Erro ao executar o comando
-    	}
+		throw dbe;// Erro ao executar o comando
+	}
 
-    	result = mysql_store_result(connection);
+	result = mysql_store_result(connection);
 	return result;
 
 }
 
-DBException Database::getLastError(){
+DBException Database::getLastError() {
 
-		DBException dbe;
-        	dbe.err_description = mysql_error(connection);
-		dbe.err_id = "POINTER";
+	DBException dbe;
+	dbe.err_description = mysql_error(connection);
+	dbe.err_id = "POINTER";
 
-        	return dbe;// Erro ao executar o comando
+	return dbe;// Erro ao executar o comando
 
 
 }
-
 
