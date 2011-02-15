@@ -48,7 +48,7 @@ public:
 	Pointer(const char *fmt, ...);
     ~Pointer();
 
-    std::string& get(const char* field);
+    std::string get(const char* field);
     bool next();
     int total();
     bool first();

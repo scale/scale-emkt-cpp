@@ -254,3 +254,23 @@ QueueManager::getEmails(int threadId)
 
 }
 
+void
+QueueManager::process_results()
+{
+	if(em.id_error < 300 && em.id_error > 0)
+	{ //sucesso no envio, verificar se todos usuarios eram validos
+		for(unsigned int x = 0; x < em.id_email_error.size(); x++)
+		{
+			QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);
+			QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca, id_campanha);
+
+			debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ",em.id_error, (em.emails_error[x]).c_str(), id_campanha, id_peca);
+		}
+
+		em.message_error = mail->getErrorMessages().message_error;
+		em.id_error = mail->getErrorMessages().id_error;
+
+		tratandoErros(em, es.id_peca, es.id_campanha);
+
+	}
+}

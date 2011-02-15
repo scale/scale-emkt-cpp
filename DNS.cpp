@@ -2,30 +2,23 @@
  * DNS.cpp
  *
  *  Created on: 21/10/2010
- *      Author: Fabiana
+ *      Author: Flavio
  */
 
 #include "DNS.h"
 
-DNS::DNS() {
+DNS::DNS()
+{
 }
 
-DNS::~DNS() {
-}
-
-std::string DNS::GetDomain(const std::string& email) {
-
-	std::string::size_type pos = email.find('@');
-
-	if( pos == std::string::npos) {
-		return email;
-	} else {
-		return email.substr(pos+1);
-	}
+DNS::~DNS()
+{
 }
 
 
-bool DNS::GetMX(std::vector<string>& adds, const std::string& domain) {
+bool
+DNS::GetMX(std::vector<string>& adds, const std::string& domain)
+{
         adds.clear(); // be safe in case of my utter stupidity
 
         sockaddr_in addr;
@@ -35,7 +28,7 @@ bool DNS::GetMX(std::vector<string>& adds, const std::string& domain) {
         SOCKET s = socket(AF_INET, SOCK_DGRAM, 0);
         hostent* host = 0;
 
-#ifdef WIN32
+#ifdef _WIN32
         addr.sin_addr.S_un.S_addr = inet_addr(server.c_str());
         if(addr.sin_addr.S_un.S_addr != INADDR_NONE) {
 #else
@@ -230,7 +223,9 @@ bool DNS::GetMX(std::vector<string>& adds, const std::string& domain) {
         return false;
 }
 
-void DNS::parsename(int& pos, const unsigned char dns[], std::string& name) {
+void
+DNS::parsename(int& pos, const unsigned char dns[], std::string& name)
+{
         int len = dns[pos];
         if(len >= 192) {
                 int pos1 = ++pos;
@@ -257,7 +252,9 @@ void DNS::parsename(int& pos, const unsigned char dns[], std::string& name) {
         }
 }
 
-bool DNS::parseRR(int& pos, const unsigned char dns[], std::string& name) {
+bool
+DNS::parseRR(int& pos, const unsigned char dns[], std::string& name)
+{
         if(pos < 12) // didn,t get more than a header.
                 return false;
         if(pos > 512) // oops.

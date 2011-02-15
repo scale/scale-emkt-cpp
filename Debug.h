@@ -17,7 +17,14 @@
 extern "C" {
 #endif
 
+#ifndef __SYS_SYSLOG_H__
+#define __SYS_SYSLOG_H__
+
+#ifdef __SYSLOG_H__
 #include <syslog.h>
+#endif
+
+#endif
 
 #ifdef  __cplusplus
 }

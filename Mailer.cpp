@@ -19,15 +19,15 @@
 #include <strings.h>
 #include <errno.h>
 
-Mailer::Mailer(const std::string& s) : server(s), port(25), lookupMXRecord(true) {
+Mailer::Mailer(const std::string& s) :
+	server(s), port(25), lookupMXRecord(true) {
 	init(); // in win32 init networking, else just does nothin'
 }
 
 Mailer::~Mailer() {
 }
 
-void
-Mailer::html(const std::string& html) {
+void Mailer::html(const std::string& html) {
 
 	body_html = html;
 
@@ -38,8 +38,7 @@ Mailer::html(const std::string& html) {
 
 // this breaks a message line up to be less than 1000 chars per line.
 // keeps words intact also.
-void
-Mailer::checklinesarelessthan1000chars() {
+void Mailer::checklinesarelessthan1000chars() {
 	int count(1);
 	for (std::vector<char>::iterator it = message.begin(); it < message.end(); ++it, ++count) {
 		if (*it == '\r') {
@@ -70,14 +69,12 @@ Mailer::checklinesarelessthan1000chars() {
 	}
 }
 
-void
-Mailer::subject(const std::string& newSubject) {
+void Mailer::subject(const std::string& newSubject) {
 	if (newSubject.length() > 0)
 		_subject = newSubject;
 }
 
-void
-Mailer::to(const std::string& name, const std::string& email) {
+void Mailer::to(const std::string& name, const std::string& email) {
 	// SMTP only allows 100 recipients max at a time.
 	// rfc821
 	if (recipients.size() >= 20) // == would be fine, but let's be stupid safe
@@ -92,69 +89,59 @@ Mailer::to(const std::string& name, const std::string& email) {
 }
 
 // this is where we do all the work.
-void
-Mailer::send() {
+void Mailer::send() {
 	Debug debug("Mailer");
 
 	const std::string OK("250");
 	std::string smtpheader;
 	char buff[1024] = "";
 
+#ifdef LINUX
+		int sock_flags = MSG_OOB | MSG_NOSIGNAL;
+#else
+		int sock_flags = MSG_OOB;
+#endif
+
 	returnstring = ""; // clear out any errors from previous use
 	m_ErrorMessages.message_error = "";
 	m_ErrorMessages.id_error = 0;
-
-	if(recipients.size() == 0) {
-		m_ErrorMessages.message_error = "453 No recipients";
-		m_ErrorMessages.id_error = 453;
-		returnstring = m_ErrorMessages.message_error;
-		throw m_ErrorMessages;
-	}
-
-	if (fromAddress.email.length() == 0) {
-		m_ErrorMessages.message_error = "454 From email address empty";
-		m_ErrorMessages.id_error = 454;
-		returnstring = m_ErrorMessages.message_error;
-		throw m_ErrorMessages;
-	}
 
 	std::vector<sockaddr_in> adds;
 
 	//TODO
 	MicroDNS mdns;
-	struct mx _mx = mdns.mx( recipients.front().domain() );
+	struct mx _mx = mdns.mx(recipients.front().domain());
 
 	struct sockaddr_in mx_host;
 	mx_host.sin_addr = _mx.addr;
 	mx_host.sin_port = htons(25);
 	mx_host.sin_family = AF_INET;
 
-	adds.push_back( mx_host );
-/*
-	if(lookupMXRecord) {
-		if(!gethostaddresses(adds)) {
-			// error!! we are dead.
-			if( m_ErrorMessages.id_error < 500){
-				m_ErrorMessages.message_error = "456 Requested action aborted: No MX records ascertained";
-				m_ErrorMessages.id_error = 456;
-			}
-			returnstring = m_ErrorMessages.message_error;
-//	if (fromAddress.email.length() == 0) {
-//		ResultMessage msg;
-//		msg.error = 1;
-//		msg.message = "'From' email address empty";
+	adds.push_back(mx_host);
+	/*
+	 if(lookupMXRecord) {
+	 if(!gethostaddresses(adds)) {
+	 // error!! we are dead.
+	 if( m_ErrorMessages.id_error < 500){
+	 m_ErrorMessages.message_error = "456 Requested action aborted: No MX records ascertained";
+	 m_ErrorMessages.id_error = 456;
+	 }
+	 returnstring = m_ErrorMessages.message_error;
+	 //	if (fromAddress.email.length() == 0) {
+	 //		ResultMessage msg;
+	 //		msg.error = 1;
+	 //		msg.message = "'From' email address empty";
 
-		mensagens.push_back(msg);
+	 mensagens.push_back(msg);
 
-		throw msg;
-	}
-*/
+	 throw msg;
+	 }
+	 */
 
 	SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
 
-	for (std::vector<sockaddr_in>::const_iterator address = adds.begin();
-			address < adds.end(); ++address)
-	{
+	for (std::vector<sockaddr_in>::const_iterator address = adds.begin(); address
+			< adds.end(); ++address) {
 
 		// without the temp variable on RedHat 8.0 we get an error
 		//  i.e. this don't work:
@@ -164,8 +151,8 @@ Mailer::send() {
 		sockaddr_in *temp_in;
 		struct in_addr *temp_addr;
 
-//		addr.sin_family = AF_INET;
-//		addr.sin_port = 25; // smtp port!! 25
+		//		addr.sin_family = AF_INET;
+		//		addr.sin_port = 25; // smtp port!! 25
 
 		::memcpy(&temp, &(*address), sizeof(temp));
 
@@ -173,10 +160,9 @@ Mailer::send() {
 		temp_addr = &temp_in->sin_addr;
 
 		// cout << "Conectando a " << inet_ntoa(*temp_addr) << " ... ";
-		if (connect(s, &temp, sizeof(temp)) != 0)
-		{
-			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
-			{
+		if (connect(s, &temp, sizeof(temp)) != 0) {
+			for (vector<Address>::iterator itr = recipients.begin(); itr
+					!= recipients.end(); ++itr) {
 				ResultMessage msg;
 
 				msg.error = 400;
@@ -195,32 +181,30 @@ Mailer::send() {
 		cmd << "EHLO " << fromAddress.domain() << std::endl;
 
 		// say hello to the server
-		len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
-//		sleep(1);
+		len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), sock_flags);
+		//		sleep(1);
 
 		len1 = recv(s, buff, 1024, 0);
 		buff[len1] = '\0';
 		returnstring = buff;
 		//debug.debug("EHLO : %s",returnstring.c_str());
 
-		if (returnstring.substr(0, 3) != OK)
-		{
+		if (returnstring.substr(0, 3) != OK) {
 			std::ostringstream cmd;
 
 			debug.error("%s", returnstring.c_str());
 
 			cmd << "HELO " << fromAddress.domain() << std::endl;
 
-			len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
+			len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), sock_flags);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
 
-			if (returnstring.substr(0, 3) != OK)
-			{
+			if (returnstring.substr(0, 3) != OK) {
 				// we must issue a quit even on an error.
 				// in keeping with the rfc's
-				len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
+				len1 = ::send(s, "QUIT\r\n", 6, sock_flags);
 				len1 = recv(s, buff, 1024, 0);
 				Closesocket(s);
 				// don't know what went wrong here if we are connected!!
@@ -238,24 +222,23 @@ Mailer::send() {
 
 		cmd << "MAIL FROM:<" << fromAddress.email << ">" << std::endl;
 
-		len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
+		len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), sock_flags);
 		len1 = recv(s, buff, 1024, 0);
 		buff[len1] = '\0';
 		returnstring = buff;
 
-		if (returnstring.substr(0, 3) != OK)
-		{
+		if (returnstring.substr(0, 3) != OK) {
 			debug.error("%s", returnstring.c_str());
 			// we must issue a quit even on an error.
 			// in keeping with the rfc's
-			len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
+			len1 = ::send(s, "QUIT\r\n", 6, sock_flags);
 			len1 = recv(s, buff, 1024, 0);
 
-			for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
-			{
+			for (vector<Address>::iterator itr = recipients.begin(); itr
+					!= recipients.end(); ++itr) {
 				ResultMessage msg;
 
-				msg.error = atoi( returnstring.substr(0, 3).c_str() );
+				msg.error = atoi(returnstring.substr(0, 3).c_str());
 				msg.message = returnstring;
 				msg.recipient = (*itr);
 
@@ -267,8 +250,8 @@ Mailer::send() {
 
 		bool algumOK = false;
 
-		for (vector<Address>::iterator itr = recipients.begin(); itr != recipients.end(); ++itr)
-		{
+		for (vector<Address>::iterator itr = recipients.begin(); itr
+				!= recipients.end(); ++itr) {
 			// RCPT
 			// S: RCPT TO:<Jones@Beta.ARPA>
 			// R: 250 OK
@@ -280,28 +263,28 @@ Mailer::send() {
 			// S: RCPT TO:<Brown@Beta.ARPA>
 			// R: 250 OK
 
-			len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), MSG_DONTROUTE | MSG_NOSIGNAL);
+			len1 = ::send(s, cmd.str().c_str(), cmd.str().size(), sock_flags);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
 			//debug.debug("RCPT: %s",returnstring.c_str());
 
-			if(returnstring.substr(0,3) != OK)
-			{
+			if (returnstring.substr(0, 3) != OK) {
 				debug.error("%s", returnstring.c_str());
 				// This particular recipient does not exist!
-                // not strictly an error as we may have more than one recipient
-                // we should have an error vector e.g.
-                // vector<pair<string address, string error> > errs;
-                // errs.push_back(make_pair(recip->first, returnstring));
-                //
-                // we then need a function to return this vector.
-                // e.g. const vector<pair<string address, string error> >& getrecipienterrors();
+				// not strictly an error as we may have more than one recipient
+				// we should have an error vector e.g.
+				// vector<pair<string address, string error> > errs;
+				// errs.push_back(make_pair(recip->first, returnstring));
+				//
+				// we then need a function to return this vector.
+				// e.g. const vector<pair<string address, string error> >& getrecipienterrors();
 
-				if( (returnstring.substr(0,3)).c_str() != NULL )
-					m_ErrorMessages.id_email_error.push_back( atoi((returnstring.substr(0,3)).c_str()) );
+				if ((returnstring.substr(0, 3)).c_str() != NULL)
+					m_ErrorMessages.id_email_error.push_back(atoi(
+							(returnstring.substr(0, 3)).c_str()));
 				else
-					m_ErrorMessages.id_email_error.push_back( 511 );
+					m_ErrorMessages.id_email_error.push_back(511);
 
 				m_ErrorMessages.emails_error.push_back((*itr));
 				continue;
@@ -311,18 +294,18 @@ Mailer::send() {
 			m_ErrorMessages.id_email_error.push_back(255);
 			m_ErrorMessages.emails_error.push_back((*itr));
 
-			debug.debug("RCPT %s: %s", (*itr).email.c_str(), returnstring.c_str());
+			debug.debug("RCPT %s: %s", (*itr).email.c_str(),
+					returnstring.c_str());
 
 			ResultMessage msg;
 
-			msg.error = atoi( returnstring.substr(0, 3).c_str() );
+			msg.error = atoi(returnstring.substr(0, 3).c_str());
 			msg.message = returnstring;
 			msg.recipient = (*itr);
 
 			mensagens.push_back(msg);
 
-			if (returnstring.substr(0, 3) != OK)
-			{
+			if (returnstring.substr(0, 3) != OK) {
 				debug.error("%s", returnstring.c_str());
 				// This particular recipient does not exist!
 				// not strictly an error as we may have more than one recipient
@@ -338,9 +321,8 @@ Mailer::send() {
 			}
 		}
 
-		if (!algumOK)
-		{
-			len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
+		if (!algumOK) {
+			len1 = ::send(s, "QUIT\r\n", 6, sock_flags);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
@@ -357,7 +339,7 @@ Mailer::send() {
 		// S: ...etc. etc. etc.
 		// S: <CRLF>.<CRLF>
 		// R: 250 OK
-		len1 = ::send(s, "DATA\r\n", 6, MSG_DONTROUTE);
+		len1 = ::send(s, "DATA\r\n", 6, sock_flags);
 		len1 = recv(s, buff, 1024, 0);
 		buff[len1] = '\0';
 		returnstring = buff;
@@ -366,18 +348,18 @@ Mailer::send() {
 			debug.error("%s", returnstring.c_str());
 			// we must issue a quit even on an error.
 			// in keeping with the rfc's
-			len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE | MSG_NOSIGNAL);
+			len1 = ::send(s, "QUIT\r\n", 6, sock_flags);
 			len1 = recv(s, buff, 1024, 0);
 			buff[len1] = '\0';
 			returnstring = buff;
 			debug.debug("Problemas no comando DATA: %s", returnstring.c_str());
 
-//			ResultMessage msg;
-//			msg.error = atoi( returnstring.substr(0, 3).c_str() );
-//			msg.message = returnstring;
-//			msg.recipient = *itr;
-//
-//			mensagens.push_back(msg);
+			//			ResultMessage msg;
+			//			msg.error = atoi( returnstring.substr(0, 3).c_str() );
+			//			msg.message = returnstring;
+			//			msg.recipient = *itr;
+			//
+			//			mensagens.push_back(msg);
 
 			Closesocket(s);
 			break;
@@ -385,13 +367,13 @@ Mailer::send() {
 
 		smtpheader = makesmtpmessage();
 		// Sending the email
-		len1 = ::send(s, smtpheader.c_str(), smtpheader.length(), MSG_DONTROUTE | MSG_NOSIGNAL);
+		len1 = ::send(s, smtpheader.c_str(), smtpheader.length(), sock_flags);
 		len1 = recv(s, buff, 1024, 0);
 		buff[len1] = '\0';
 		returnstring = buff;
 
 		// hang up the connection
-		len1 = ::send(s, "QUIT\r\n", 6, MSG_DONTROUTE);
+		len1 = ::send(s, "QUIT\r\n", 6, sock_flags);
 		len1 = recv(s, buff, 1024, 0);
 		buff[len1] = '\0';
 		returnstring = buff;
@@ -402,39 +384,34 @@ Mailer::send() {
 	}
 }
 
-std::string
-Mailer::makesmtpmessage() const {
+std::string Mailer::makesmtpmessage() const {
 	std::ostringstream os;
 	QuotedPrintable qp;
 
-
 	std::string sender(fromAddress.email);
 
-	if (sender.length())
-	{
+	if (sender.length()) {
 		std::string::size_type pos(sender.find("@"));
-		if (pos != std::string::npos)
-		{ //found the server beginning
+		if (pos != std::string::npos) { //found the server beginning
 			sender = sender.substr(0, pos);
 		}
 	}
 	std::string smtpheader;
-	if (fromAddress.name.length())
-	{
-		os << "From: \"" << fromAddress.name << "\" <" + fromAddress.email << ">" << std::endl;
+	if (fromAddress.name.length()) {
+		os << "From: \"" << fromAddress.name << "\" <" + fromAddress.email
+				<< ">" << std::endl;
 	} else {
 		os << "From: <" + fromAddress.email << ">" << std::endl;
 	}
 
 	// add the recipients to the header
-	if (recipients.size() == 1)
-	{
+	if (recipients.size() == 1) {
 		Address r = recipients[0];
 		os << "To: \"" << r.name << "\" <" << r.email << ">" << std::endl;
 	} else {
-		os << "To: \"" << fromAddress.name << "\" <" << fromAddress.email << ">" << std::endl;
+		os << "To: \"" << fromAddress.name << "\" <" << fromAddress.email
+				<< ">" << std::endl;
 	}
-
 
 	std::string boundary("----=_NextPart_AUTHORIZED_EMAIL");
 
@@ -447,17 +424,20 @@ Mailer::makesmtpmessage() const {
 	time(&t);
 	tm* ptm = localtime(&t);
 
-	strftime(buff, 200, "%s", ptm );
-	os << "Message-ID: <" << buff << "." << fromAddress.email << ">" << std::endl;
+	strftime(buff, 200, "%s", ptm);
+	os << "Message-ID: <" << buff << "." << fromAddress.email << ">"
+			<< std::endl;
 
 	bzero(buff, 200);
-	strftime(buff, 200, "%a, %d %b %Y %H:%M:%S %z", ptm );
+	strftime(buff, 200, "%a, %d %b %Y %H:%M:%S %z", ptm);
 	os << "Date: " << buff << std::endl;
 
 	// add the subject
-	os << "Subject: =?iso-8859-1?Q?" << qp.Encode(_subject) << "?=" << std::endl;
+	os << "Subject: =?iso-8859-1?Q?" << qp.Encode(_subject) << "?="
+			<< std::endl;
 
-	os << "Content-Type: multipart/alternative; boundary=\"" << boundary << "\"" << std::endl;
+	os << "Content-Type: multipart/alternative; boundary=\"" << boundary
+			<< "\"" << std::endl;
 
 	if (id_camp_peca.length()) {
 		os << "X-Campanha_Peca: " << id_camp_peca << std::endl;
@@ -478,7 +458,8 @@ Mailer::makesmtpmessage() const {
 
 	os << "--" << boundary << std::endl;
 	os << "Content-type: text/plain; charset=iso-8859-1" << std::endl;
-	os << "Content-transfer-encoding: quoted-printable" << std::endl << std::endl;
+	os << "Content-transfer-encoding: quoted-printable" << std::endl
+			<< std::endl;
 
 	os << body_text << std::endl;
 
@@ -487,7 +468,8 @@ Mailer::makesmtpmessage() const {
 
 	os << "--" << boundary << std::endl;
 	os << "Content-type: text/html; charset=iso-8859-1" << std::endl;
-	os << "Content-transfer-encoding: quoted-printable" << std::endl << std::endl;
+	os << "Content-transfer-encoding: quoted-printable" << std::endl
+			<< std::endl;
 
 	os << qp.Encode(body_html) << std::endl;
 
@@ -502,13 +484,11 @@ Mailer::makesmtpmessage() const {
 	return os.str().c_str();
 }
 
-
 // This does nothing on unix.
 // for windoze only, to initialise networking, snore
 void Mailer::init() const {
 #ifdef WIN32
-	class socks
-	{
+	class socks {
 	public:
 		bool init() {
 
@@ -516,21 +496,27 @@ void Mailer::init() const {
 			WSADATA wsaData;
 
 			wVersionRequested = MAKEWORD( 2, 0 );
-			int ret = WSAStartup( wVersionRequested, &wsaData);
-			if(ret)
-			return false;
+			int ret = WSAStartup(wVersionRequested, &wsaData);
+			if (ret)
+				return false;
 			initialised = true;
 			return true;
 		}
-		bool IsInitialised() const {return initialised;}
-		socks():initialised(false) {init();}
-		~socks()
-		{
-			if(initialised)
-			shutdown();
+		bool IsInitialised() const {
+			return initialised;
+		}
+		socks() :
+			initialised(false) {
+			init();
+		}
+		~socks() {
+			if (initialised)
+				shutdown();
 		}
 	private:
-		void shutdown() {WSACleanup();}
+		void shutdown() {
+			WSACleanup();
+		}
 		bool initialised;
 	};
 	static socks s;
@@ -546,5 +532,4 @@ void Mailer::Closesocket(const SOCKET& s) {
 	close(s);
 #endif
 }
-
 

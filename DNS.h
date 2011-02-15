@@ -31,7 +31,6 @@ public:
 	DNS();
 	virtual ~DNS();
 
-	static std::string GetDomain(const std::string& domain);
 	bool GetMX(std::vector<string>& adds, const std::string& domain);
 
 	static std::string server;
@@ -52,12 +51,6 @@ private:
 	// for the server that 'getserveraddress' returns.
 	// returns false on failure, true on success
 	bool gethostaddresses(std::vector<sockaddr_in>& adds);
-
-	// split an address into its relevant parts i.e.
-	// name and actual address and return it in Address.
-	// this may be usefull out of the class maybe
-	// it should be a static function or a global? thinking about it.
-	Address parseaddress(const std::string& addresstoparse);
 
 };
 

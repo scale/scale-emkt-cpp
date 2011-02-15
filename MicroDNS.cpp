@@ -17,12 +17,22 @@
  */
 
 #include <stdio.h>
+
+#ifndef __SYS_SOCKET_H__
+#define __SYS_SOCKET_H__
+
+#include <winsock2.h>
+
+#else
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
+
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>

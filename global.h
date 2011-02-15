@@ -46,6 +46,10 @@ typedef vector<string> vString;
 std::string DNS = "";
 int INSTANCE_NUM = 1;
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 const char * get_socket_error(int err_no);
 
 #endif

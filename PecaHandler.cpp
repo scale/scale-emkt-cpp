@@ -15,7 +15,8 @@
 #include <memory>
 using namespace std;
 
-PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1) : database(conn) {
+PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1)
+{
 	mutex.Acquire();
 
 	_dead = false;

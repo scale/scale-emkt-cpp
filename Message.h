@@ -33,6 +33,8 @@ private:
 	std::string _text;
 
 	void substitute(std::string contexto, const std::string what, const std::string new_token);
+
+	std::string	md5(const char *keyword);
 };
 
 #endif /* MESSAGE_H_ */

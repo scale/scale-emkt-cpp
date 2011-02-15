@@ -36,8 +36,13 @@ public:
 	std::string email; // e.g.   someone@mail.com
 
 	std::string domain() {
-		size_t pos = email.find("@");
-		return email.substr(pos+1);
+		std::string::size_type pos = email.find('@');
+
+		if( pos == std::string::npos) {
+			return email;
+		} else {
+			return email.substr(pos+1);
+		}
 	}
 
 	Address & operator =( const Address &other) {

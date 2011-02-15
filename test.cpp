@@ -8,21 +8,21 @@
  *   (at your option) any later version.                                   *
  ***************************************************************************/
 #include <stdio.h>
-#include <iostream>
 #include <stdlib.h>
-#include <mysql/mysql.h>
-#include "string.h"
-using namespace std;
-
-#include "Pointer.h"
-#include "ErrorPop.h"
-#include "global.h"
-#include "PecaHandler.h"
-#include "QueueManager.h"
-#include "Mailer.h"
 #include "unistd.h"
-#include <fstream>
 
+#include "global.h"
+#include "Pointer.h"
+#include "PecaHandler.h"
+#include "DNS.h"
+#include "Mailer.h"
+
+#include <string>
+#include <vector>
+#include <fstream>
+#include <iostream>
+
+using namespace std;
 
 int main() {
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");

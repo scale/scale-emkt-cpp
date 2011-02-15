@@ -8,6 +8,9 @@
 #ifndef PECA_H_
 #define PECA_H_
 
+#include "Debug.h"
+#include <string>
+
 class Peca {
 public:
 	Peca();

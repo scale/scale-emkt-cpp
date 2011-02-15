@@ -10,8 +10,8 @@ BINDIR=$(BASENAME)/emkt
 INSTALL=install -o root -m
 BINPERM=02755 -s -g root
 
-CFLAGS	= -g3 -W -Wall -O3 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"' 
-CXXFLAGS = -g3 -W -Wall -O3 ${INCLUDES}  -D'CONF_DIR="${BINDIR}/database.conf"'
+CFLAGS	= -g3 -W -Wall -O3 ${INCLUDES} -D'CONF_DIR="${BINDIR}/database.conf"' -D__SYSLOG_H__ -DLINUX
+CXXFLAGS = ${CFLAGS}
 LDFLAGS = -lmysqlclient -lm -lz -lpthread -L. -L/usr/lib/mysql -L/usr/lib64/mysql -lssl -lcrypto 
 
 OBJS=Base64.${O} Database.$(O) Date.$(O) Debug.$(O) Encoder.$(O) \

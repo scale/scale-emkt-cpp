@@ -12,7 +12,6 @@
 
 #include "Mutex.h"
 #include "Thread.h"
-#include "Sender.h"
 #include "Mailer.h"
 #include "Database.h"
 #include "Peca.h"
@@ -22,7 +21,7 @@
 class PecaHandler : public Thread {
 
 public:
-	PecaHandler(int peca, int campanha, int total_emails = 1);
+	PecaHandler(int peca, int campanha, int total_emails);
 	~PecaHandler();
 
 	bool dead() { return _dead; }
@@ -42,7 +41,6 @@ private:
 
 	Database database;
 
-	map<string, vector<Sender> > servidoresMX;
 };
 
 

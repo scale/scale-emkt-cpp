@@ -1,7 +1,6 @@
 #include "global.h"
 
 
-
 const char * get_socket_error(int err_no) {
 
 	switch (err_no) {
@@ -10,7 +9,7 @@ const char * get_socket_error(int err_no) {
 		case EALREADY:      return "A connection request is already in progress for the specified socket (EALREADY)";
 		case EBADF:         return "The socket argument is not a valid file descriptor (EBADF)";
 		case ECONNREFUSED:  return "The target address was not listening for connections or refused the connection request (ECONNREFUSED)";
-		case EFAULT:        return "The address parameter can not be acces (EFAULT)";
+		case EFAULT:        return "The address parameter can not be access (EFAULT)";
 		case EINPROGRESS:   return "O_NONBLOCK is set for the file descriptor for the socket and the connection cannot be immediately established; the connection will be established asynchronously (EINPROGRESS)";
 		case EINTR:         return "The attempt to establish a connection was interrupted by delivery of a signal that was caught; the connection will be established asynchronously (EINTR)";
 		case EISCONN:       return "The specified socket is connection-mode and is already connected (EISCONN)";

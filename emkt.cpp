@@ -8,22 +8,20 @@
  *   (at your option) any later version.                                   *
  ***************************************************************************/
 #include <stdio.h>
-#include <iostream>
+#include <stdlib.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <mysql/mysql.h>
-#include "string.h"
-using namespace std;
 
-#include "Pointer.h"
-#include "ErrorPop.h"
 #include "global.h"
+#include "Pointer.h"
 #include "PecaHandler.h"
 #include "QueueManager.h"
 #include "Mailer.h"
-#include "unistd.h"
-#include "stdlib.h"
 #include <fstream>
+#include <iostream>
 
+using namespace std;
 
 QueueManager qm;
 
@@ -47,8 +45,7 @@ int main() {
 		//ErrorPop ep(&conn);
 		//ep.Start();
 
-		debug.debug("Conectando ao BD...");
-		Database database(conn);
+		Database database;
 		qm.Start();
 
 		//caso o programa tenha caido durante um envio voltar a peca ao status para ser entregue
@@ -59,17 +56,16 @@ int main() {
 		while (1) {
 			Pointer
 					pointer(
-							conn,
 							"select P.* from EmktPeca P inner join EmktCampanha C using(id_campanha) "
 								"where P.data_enviar <= now() and P.stats = 0 and (C.stats = 0 or C.id_campanha = 0) "
 								"order by P.id_peca,P.id_campanha");
 
-			if (pointer.getTotal() < 1) {
+			if (pointer.total() < 1) {
 				sleep(30);
 				continue;
 			}
 
-			while (pointer.getNext()) {
+			while (pointer.next()) {
 				int slots_free = 0;
 
 				for (int vez = 0; vez < MAX_THREADS_PECA; vez++) {
@@ -86,8 +82,8 @@ int main() {
 					int id_peca = 0;
 					slots_free++;
 
-					id_peca = atoi(pointer.get("id_peca"));
-					id_campanha = atoi(pointer.get("id_campanha"));
+					id_peca = atoi(pointer.get("id_peca").c_str());
+					id_campanha = atoi(pointer.get("id_campanha").c_str());
 
 					debug.info("Iniciando peca %d/%d", id_campanha, id_peca);
 					ph[vez] = new PecaHandler(id_peca, id_campanha);
@@ -122,19 +118,19 @@ void leConfiguracao() {
 		getline(hfile, temp);
 
 		if (temp.find("database") == 0) {
-			conn.db = temp.substr(temp.find("=") + 1, temp.length());
+			Database::db = temp.substr(temp.find("=") + 1, temp.length());
 		}
 
 		if (temp.find("host") == 0) {
-			conn.host = temp.substr(temp.find("=") + 1, temp.length());
+			Database::host = temp.substr(temp.find("=") + 1, temp.length());
 		}
 
 		if (temp.find("user") == 0) {
-			conn.user = temp.substr(temp.find("=") + 1, temp.length());
+			Database::user = temp.substr(temp.find("=") + 1, temp.length());
 		}
 
 		if (temp.find("pass") == 0) {
-			conn.pass = temp.substr(temp.find("=") + 1, temp.length());
+			Database::pass = temp.substr(temp.find("=") + 1, temp.length());
 		}
 
 		if (temp.find("DNS") == 0) {
@@ -146,7 +142,11 @@ void leConfiguracao() {
 	}
 
 	debug.info("Parametros encontrados: %s@%s:/%s - DNS: %s para instancia %d",
-			conn.user.c_str(), conn.host.c_str(), conn.db.c_str(), DNS.c_str(), INSTANCE_NUM);
+			Database::user.c_str(),
+			Database::host.c_str(),
+			Database::db.c_str(),
+			DNS.c_str(),
+			INSTANCE_NUM);
 
 	hfile.close();
 }

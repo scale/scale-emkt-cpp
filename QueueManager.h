@@ -16,6 +16,7 @@
 #include "Thread.h"
 #include "Mailer.h"
 
+#include <map>
 
 class QueueManager : public Thread {
 
@@ -43,6 +44,7 @@ private:
 	int terminate;
 	int tipo_peca;
 
+	map<string, Mailer> servidoresMX;
 };
 
 
