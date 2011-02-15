@@ -428,7 +428,7 @@ std::string Mailer::makesmtpmessage() const {
 	os << "Message-ID: <" << buff << "." << fromAddress.email << ">"
 			<< std::endl;
 
-	bzero(buff, 200);
+	memset(buff, sizeof(char), 200);
 	strftime(buff, 200, "%a, %d %b %Y %H:%M:%S %z", ptm);
 	os << "Date: " << buff << std::endl;
 

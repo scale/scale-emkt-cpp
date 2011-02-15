@@ -18,6 +18,8 @@ public:
 	bool isValida();
 
 	std::string from;
+	std::string fromName;
+
 	std::string subject;
 	std::string html;
 	std::string txt;

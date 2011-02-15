@@ -35,7 +35,7 @@ PecaHandler::~PecaHandler() {
 	_dead = true;
 }
 
-void PecaHandler::init() {
+void PecaHandler::resetEnvio() {
 	//Se o programa retornou sem ter excluido os emails da fila
 	//é porque não foram entregues, então ao reiniciar recolocamos todos
 	//na fila e caso seja a primeira, nao ira mudar nada
@@ -52,16 +52,11 @@ void PecaHandler::init() {
 void* PecaHandler::Run(void* param) {
 
 	Peca peca;
-	Sender* sender[MAX_THREADS_ENVIO];
-	map<string, Sender> mapSenders;
 
 	int num_threads = 0; //Numero de threads rodando
 	int vez = 0;
 
-	init();
-
-	for (int i = 0; i < MAX_THREADS_ENVIO; i++)
-		sender[i] = NULL;
+	resetEnvio();
 
 	int queueId = 0;
 	int status_running = MAX_THREADS_ENVIO;
@@ -72,7 +67,7 @@ void* PecaHandler::Run(void* param) {
 	ErrorMessages_t erro_vez;
 
 	try {
-		Pointer pointer(conn,
+		Pointer pointer(
 				"select * from EmktPeca where id_peca=%d and id_campanha=%d ",
 				id_peca, id_campanha);
 
@@ -100,7 +95,6 @@ void* PecaHandler::Run(void* param) {
 
 		DNS _dns(DNS);
 		Pointer pointer(
-						conn,
 						"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
 						"where id_peca=%d and id_campanha=%d and id_thread = %d",
 						id_peca, id_campanha, INSTANCE_NUM);

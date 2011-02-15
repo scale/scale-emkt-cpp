@@ -26,32 +26,11 @@ typedef int SOCKET; // get round windows definitions.
 
 #include <vector>
 #include <string>
+
 #include "Debug.h"
+#include "Message.h"
 
 // email address wrapper struct
-class Address {
-public:
-	std::string id;
-	std::string name;    // e.g.   freddy foobar
-	std::string email; // e.g.   someone@mail.com
-
-	std::string domain() {
-		std::string::size_type pos = email.find('@');
-
-		if( pos == std::string::npos) {
-			return email;
-		} else {
-			return email.substr(pos+1);
-		}
-	}
-
-	Address & operator =( const Address &other) {
-		id = other.id;
-		name = other.name;
-		email = other.email;
-		return *this;
-	}
-};
 
 class ResultMessage {
 public:

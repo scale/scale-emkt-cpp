@@ -21,9 +21,11 @@ Message::~Message() {
 void
 Message::peca(Peca & peca) {
 	subject = peca.subject;
-	from = peca.from;
+	from.email = peca.from;
+	from.name = peca.fromName;
 
 	_html = peca.html;
+	_text = peca.txt;
 }
 
 const std::string &
@@ -53,10 +55,10 @@ Message::substitute(std::string contexto, const std::string what, const std::str
 {
 	std::string::size_type pos = contexto.find(what);
 
-	while (pos != contexto.end())
+	while (pos != std::string::npos)
 	{
 		contexto.replace(pos, pos + new_token.size(), new_token);
-		pos = contexto.find(what, it);
+		pos = contexto.find(what, pos);
 	}
 }
 

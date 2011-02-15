@@ -10,6 +10,30 @@
 
 #include "Peca.h"
 
+class Address {
+public:
+	std::string id;
+	std::string name;    // e.g.   freddy foobar
+	std::string email; // e.g.   someone@mail.com
+
+	std::string domain() {
+		std::string::size_type pos = email.find('@');
+
+		if( pos == std::string::npos) {
+			return email;
+		} else {
+			return email.substr(pos+1);
+		}
+	}
+
+	Address & operator =( const Address &other) {
+		id = other.id;
+		name = other.name;
+		email = other.email;
+		return *this;
+	}
+};
+
 class Message {
 public:
 	Message();
@@ -24,8 +48,8 @@ public:
 
 	void peca(Peca& peca);
 	Peca &peca() { return _peca; }
-	const std::string& html() const;
-	const std::string& text() const;
+	const std::string& html();
+	const std::string& text();
 
 private:
 	Peca _peca;

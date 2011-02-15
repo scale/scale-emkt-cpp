@@ -29,7 +29,7 @@ public:
 private:
 	virtual void* Run(void*);
 	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
-	void init();
+	void resetEnvio();
 
 	int id;
 	Mutex mutex;

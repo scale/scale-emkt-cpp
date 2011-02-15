@@ -166,7 +166,7 @@ DNS::GetMX(std::vector<string>& adds, const std::string& domain)
                                 // #pragma warning( disable : 4786 )
                                 // #pragma warning( default : 4786 )
                                 std::vector<std::string> names;
-                                in_addr address;
+                                //in_addr address;
                                 std::string name;
                                 // VC++ incompatability scoping
                                 // num should be able to be declared in every for loop here
