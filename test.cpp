@@ -21,14 +21,16 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
 int main() {
 	debug.info("Iniciando o PROGRAMA DE ENVIO!");
 
-	std::vector<std:string> ddv;
+	std::vector<std::string> ddv;
 	DNS::server = DNS;
+	DNS _dns;
 
 	_dns.GetMX(ddv, "hotmail.com");
 

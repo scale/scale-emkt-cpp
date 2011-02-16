@@ -43,10 +43,10 @@ using namespace std;
 
 typedef vector<string> vString;
 
-std::string DNS = "";
+std::string DNS = "127.0.0.1";
 int INSTANCE_NUM = 1;
 
-#ifdef WIN32
+#ifndef LINUX
 #include <winsock2.h>
 #endif
 
