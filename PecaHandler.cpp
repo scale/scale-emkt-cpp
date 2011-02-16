@@ -9,69 +9,47 @@
  ***************************************************************************/
 
 #include "PecaHandler.h"
-#include "QueueManager.h"
+
 #include "unistd.h"
 #include <iostream>
 #include <memory>
 using namespace std;
 
-PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1)
-{
-	mutex.Acquire();
-
-	_dead = false;
-	SetThreadID(peca + campanha * 100);
-	id_peca = peca;
-	id_campanha = campanha;
+PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1) {
+	//	mutex.Acquire();
 
 	debug.debug("PecaHandler::PecaHandler -- campanha = %d / peca = %d ",
 			id_campanha, id_peca);
 
-	mutex.Release();
+	//	mutex.Release();
 }
 
 PecaHandler::~PecaHandler() {
-	Stop();
-	_dead = true;
+
 }
 
-void PecaHandler::resetEnvio() {
-	//Se o programa retornou sem ter excluido os emails da fila
-	//é porque não foram entregues, então ao reiniciar recolocamos todos
-	//na fila e caso seja a primeira, nao ira mudar nada
-	database.executeQuery("update EmktFilaEnvioPeca set "
-		"stats=0 where id_peca=%d and id_campanha=%d and id_thread = %d" ,
-		id_peca, id_campanha, INSTANCE_NUM);
-
+void PecaHandler::resetEnvio(Peca &peca) {
 	//Definindo o stats de que esta em andamento
 	database.executeQuery("update EmktPeca set stats=1 where "
-		"id_peca='%d' and id_campanha='%d'",
-		id_peca, id_campanha);
+		"id_peca='%d' and id_campanha='%d'", peca.pecaId, peca.campanhaId);
 }
 
-void* PecaHandler::Run(void* param) {
+void*
+PecaHandler::Run(void* param) {
 
 	Peca peca;
 
-	int num_threads = 0; //Numero de threads rodando
-	int vez = 0;
-
 	resetEnvio();
 
-	int queueId = 0;
 	int status_running = MAX_THREADS_ENVIO;
-
-	vector < ErrorMessages_t > vErrorMessages;
-	emailSource_t es;
-
-	ErrorMessages_t erro_vez;
 
 	try {
 		Pointer pointer(
-				"select * from EmktPeca where id_peca=%d and id_campanha=%d ",
-				id_peca, id_campanha);
+				"select * from EmktPeca P inner join EmktCampanha C using(id_campanha, id_peca) "
+				"where P.data_enviar = date_add(now(), interval -14 day) and C.stats = 0 and P.stats != 2");
 
-		if (pointer.next()) {
+		while (pointer.next())
+		{
 
 			peca.from = pointer.get("email_resposta");
 			peca.subject = pointer.get("subject");
@@ -79,28 +57,22 @@ void* PecaHandler::Run(void* param) {
 			peca.html = pointer.get("corpoHTML");
 			peca.html += " ";
 
-			peca.campanhaId = id_campanha;
-			peca.pecaId = pecaId;
+			peca.campanhaId = atoi(pointer.get("id_campanha"));
+			peca.pecaId = atoi(pointer.get("id_peca"));
 
-			debug.debug("Peca:%d/%d - %s",
-					peca.campanhaId, peca.pecaId,
+			debug.debug("Peca:%d/%d - %s", peca.campanhaId, peca.pecaId,
 					peca.subject.c_str());
 
-		} else {
-			setRunning(false);
-			debug.info("Nao ha pecas para campanha %d", id_campanha);
-			_dead = true;
-			return NULL;
 		}
 
 		DNS _dns(DNS);
 		Pointer pointer(
-						"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
-						"where id_peca=%d and id_campanha=%d and id_thread = %d",
-						id_peca, id_campanha, INSTANCE_NUM);
+				"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
+					"where id_peca=%d and id_campanha=%d and id_thread = %d",
+				id_peca, id_campanha, INSTANCE_NUM);
 
 		while (pointer.next()) {
-			vector < string > vdd;
+			vector<string> vdd;
 			string domain = pointer.get("dominio");
 
 			_dns.GetMX(ddv);
@@ -124,7 +96,7 @@ void* PecaHandler::Run(void* param) {
 
 		for (it = servidoresMX.begin(); it != servidoresMX.end();) {
 			string domain = (*it).first;
-			vector < auto_ptr<Sender> > v_senders = (*it).second;
+			vector<auto_ptr<Sender> > v_senders = (*it).second;
 
 			Pointer
 					pointer(
@@ -155,68 +127,69 @@ void* PecaHandler::Run(void* param) {
 							continue;
 						}
 
-sender					.
+						//sender					.
+					}
 				}
+				++it;
 			}
-			++it;
+
+			Sleep(1);
+
 		}
 
-		Sleep(1);
+		if (finalizar > 0) {
+			debug.debug("PH[%d]::Run -- Finalizando peca", id_peca);
+			break;
+		}
+
+	}//FIM Do WHILE
+
+	try {
+		Database database(s_CI);
+		debug.info("Finalizando Peca: id_campanha='%d', id_peca='%d'",
+				id_campanha, id_peca);
+		database.executeQuery(
+				"update EmktPeca set stats=2 where id_peca='%d' and id_campanha='%d'",
+				id_peca, id_campanha);
+	} catch (DBException dbe) {
+		debug.error("PH[%d]::DBException:: %s", id_peca,
+				dbe.err_description.c_str());
 
 	}
 
-	if (finalizar > 0) {
-		debug.debug("PH[%d]::Run -- Finalizando peca", id_peca);
-		break;
-	}
-
-}//FIM Do WHILE
-
-try {
-	Database database(s_CI);
-	debug.info("Finalizando Peca: id_campanha='%d', id_peca='%d'",
-			id_campanha, id_peca);
-	database.executeQuery(
-			"update EmktPeca set stats=2 where id_peca='%d' and id_campanha='%d'",
-			id_peca, id_campanha);
-} catch (DBException dbe) {
-	debug.error("PH[%d]::DBException:: %s", id_peca,
-			dbe.err_description.c_str());
+	debug.debug("PH[%d]::Run -- Fim", id_peca);
+	setRunning(false);
+	return NULL;
 
 }
 
-debug.debug("PH[%d]::Run -- Fim", id_peca);
-setRunning(false);
-return NULL;
+DNS = "";
+debug = new Debug("PecaHandler");
 
-}
+for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
 
-	DNS = "";
-	debug = new Debug("PecaHandler");
-
-	for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
-
-		db.executeQuery("replace into EmktStatsEnvio "
+	db.executeQuery("replace into EmktStatsEnvio "
 			"(id_peca,id_campanha,error_code,email,enviado)"
 			" values ('%d','%d','%d','%s',now())", id_peca, id_campanha,
-				em.error, em.recipient.email.c_str());
+			em.error, em.recipient.email.c_str());
 
-		if (em.error >= 550) {
-			db.executeQuery(
-					"insert ignore into EmktListaNegra (email,code,mensagem) "
-						"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
-					em.error, em.message.c_str());
-		}
-
-		if (em.error < 300 || em.error >= 500) {
-			db.executeQuery("delete from EmktFilaEnvioPeca where "
-				"id_campanha='%d' and id_peca='%d' and email = '%s'",
-					id_campanha, id_peca, em.recipient.email.c_str());
-		}
-
-		debug.debug("Peca (%d/%d): %d - %s ", id_campanha, id_peca, em.error,
-				em.recipient.email.c_str());
+	if (em.error >= 550) {
+		db.executeQuery(
+				"insert ignore into EmktListaNegra (email,code,mensagem) "
+				"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
+				em.error, em.message.c_str());
 	}
 
-	return NULL;
+	if (em.error < 300 || em.error >= 500) {
+		db.executeQuery("delete from EmktFilaEnvioPeca where "
+				"id_campanha='%d' and id_peca='%d' and email = '%s'",
+				id_campanha, id_peca, em.recipient.email.c_str());
+	}
+
+	debug.debug("Peca (%d/%d): %d - %s ", id_campanha, id_peca, em.error,
+			em.recipient.email.c_str());
 }
+
+return NULL;
+}
+

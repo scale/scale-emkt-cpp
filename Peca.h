@@ -13,8 +13,8 @@
 
 class Peca {
 public:
-	Peca();
-	virtual ~Peca();
+	Peca() : ativa(true) {};
+	virtual ~Peca() {};
 	bool isValida();
 
 	std::string from;
@@ -24,10 +24,17 @@ public:
 	std::string html;
 	std::string txt;
 
+	bool ativa;
+
 	int pecaId;
 	int campanhaId;
 
 	Debug debug;
+
+	bool operator == (Peca & other)
+		{
+			return campanhaId == other.campanhaId && pecaId == other.pecaId;
+		}
 };
 
 #endif /* PECA_H_ */

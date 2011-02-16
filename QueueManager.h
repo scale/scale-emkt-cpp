@@ -24,16 +24,24 @@ public:
 	QueueManager();
 	~QueueManager();
 
+	vector<Address> getEmails(int threadId);
+
+	void includePeca(Peca& peca);
+	void cancelPeca(Peca& peca);
+
+	void pause();
+	void resume();
+private:
+	virtual void* Run(void* param);
+
 	static bool returnQueue(const char* email);
 	bool returnQueue();
 	void statsInsert(const char* email, int code);
 	static void statsInsert(const char* email, int code, const std::string& m, int peca, int campanha);
 	void eraseQueue(const char* email);
 	static void eraseQueue(const char* email, int id_peca, int id_campanha);
-	vector<Address> getEmails(int threadId);
-	
-private:
-	virtual void* Run(void* param);
+
+	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
 
 	int id;
 	Database* database;
@@ -42,9 +50,9 @@ private:
 	int id_peca;
 	int id_campanha;
 	int terminate;
-	int tipo_peca;
 
 	map<string, Mailer> servidoresMX;
+	vector<Peca> pecas;
 };
 
 

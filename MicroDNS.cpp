@@ -53,7 +53,7 @@ int MicroDNS::mxcomp(int p[], int n) {
 	else if (p[1] < p[2])
 		return (0);
 	else
-		return (random() % n);
+		return (rand() % n);
 }
 
 void MicroDNS::sort_mxrecs(struct mx *mxrecs, int nmx) {

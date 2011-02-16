@@ -37,7 +37,51 @@ QueueManager::Run(void* param)
 {
 	while (1) {
 		debug.info("Queueing...");
+
+
+
+
 		sleep(30);
+	}
+}
+
+void QueueManager::includePeca(Peca& peca)
+{
+	Pointer pt = new Pointer("select count(*) as c from EmktFilaEnvioPeca "
+							 "where id_peca=%d and id_campanha=%d", peca.pecaId, peca.campanhaId);
+
+	int num_emails = 0;
+	if (pt.next()) num_emails = atoi(pt.get("c"));
+
+	if (num_emails > 0)
+	{
+		//Se o programa retornou sem ter excluido os emails da fila
+		//é porque não foram entregues, então ao reiniciar recolocamos todos
+		//na fila e caso seja a primeira, nao ira mudar nada
+		database.executeQuery("update EmktFilaEnvioPeca set stats=0, id_thread = %d "
+						  "where id_peca=%d and id_campanha=%d and id_thread = 0 "
+						  "limit %d",
+						  INSTANCE_NUM,
+						  peca.pecaId,
+						  peca.campanhaId,
+						  num_emails);
+
+		pecas.push_back(peca);
+	}
+}
+
+void QueueManager::cancelPeca(Peca& peca)
+{
+	vector<Peca>::iterator it;
+
+	for (it = pecas.begin(); it != pecas.end(); it++)
+	{
+		Peca p = *it;
+		if (p == peca)
+		{
+			p.ativa = false;
+			break;
+		}
 	}
 }
 

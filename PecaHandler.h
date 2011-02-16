@@ -12,35 +12,26 @@
 
 #include "Mutex.h"
 #include "Thread.h"
-#include "Mailer.h"
 #include "Database.h"
 #include "Peca.h"
+#include "Pointer.h"
 
 #include <map>
 
 class PecaHandler : public Thread {
 
 public:
-	PecaHandler(int peca, int campanha, int total_emails);
+	PecaHandler();
 	~PecaHandler();
-
-	bool dead() { return _dead; }
 
 private:
 	virtual void* Run(void*);
-	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
-	void resetEnvio();
 
-	int id;
-	Mutex mutex;
-	int id_peca;
-	int id_campanha;
-	int total_emails;
+	void lePecasAtivas();
+	void resetEnvio(Peca &peca);
 
-	bool _dead;
-
+	std::vector<Peca> pecas;
 	Database database;
-
 };
 
 
