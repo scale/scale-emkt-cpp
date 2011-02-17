@@ -34,23 +34,20 @@ void PecaHandler::resetEnvio(Peca &peca) {
 		"id_peca='%d' and id_campanha='%d'", peca.pecaId, peca.campanhaId);
 }
 
-void*
-PecaHandler::Run(void* param) {
+void PecaHandler::lePecasAtivas() {
 
-	Peca peca;
+	vector<Peca> v;
 
-	resetEnvio();
-
-	int status_running = MAX_THREADS_ENVIO;
-
+	copy(pecas.begin(), pecas.end(), v);
 	try {
-		Pointer pointer(
-				"select * from EmktPeca P inner join EmktCampanha C using(id_campanha, id_peca) "
-				"where P.data_enviar = date_add(now(), interval -14 day) and C.stats = 0 and P.stats != 2");
+		Pointer
+				pointer(
+						"select * from EmktPeca P inner join EmktCampanha C using(id_campanha, id_peca) "
+							"where P.data_enviar <= now() and C.stats = 0 and P.stats != 2");
 
-		while (pointer.next())
-		{
+		while (pointer.next()) {
 
+			Peca peca;
 			peca.from = pointer.get("email_resposta");
 			peca.subject = pointer.get("subject");
 			peca.txt = pointer.get("corpoTXT");
@@ -63,133 +60,58 @@ PecaHandler::Run(void* param) {
 			debug.debug("Peca:%d/%d - %s", peca.campanhaId, peca.pecaId,
 					peca.subject.c_str());
 
+			vector<Peca>::iterator it;
+			for (it = v.begin(); it != v.end(); it++) {
+				if ((*it) == peca) {
+					(*it).ativa = true;
+
+					//excluir aqui
+					v.erase(it);
+					continue;
+				}
+			}
+			peca.ativa = true;
+			pecas.push_back(peca);
 		}
 
-		DNS _dns(DNS);
-		Pointer pointer(
-				"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
-					"where id_peca=%d and id_campanha=%d and id_thread = %d",
-				id_peca, id_campanha, INSTANCE_NUM);
-
-		while (pointer.next()) {
-			vector<string> vdd;
-			string domain = pointer.get("dominio");
-
-			_dns.GetMX(ddv);
-			debug.debug("Num. MX para %s: %d", domain.c_str(), vdd.size());
-			servidoresMX[domain] = vdd;
+		// desativar as remanescentes
+		vector<Peca>::iterator it;
+		for (it = v.begin(); it != v.end(); it++) {
+			(*it).ativa = false;
 		}
 
 	} catch (DBException dbe) {
 		debug.error("%s", dbe.err_description.c_str());
-		_dead = true;
-		return NULL;
+	}
+}
+
+void*
+PecaHandler::Run(void* param) {
+
+	Peca peca;
+
+	resetEnvio();
+
+	while (1) {
+		lePecasAtivas();
+		Sleep(15);
 	}
 
-	// Iniciando o procedimentos para comecar o envio!
-	int finalizar = 0;
+}
 
-	while (status_running > 0) {
-
-		map<string, vector<string> >::iterator it;
-		map<string, auto_ptr<Sender> >::iterator itSender;
-
-		for (it = servidoresMX.begin(); it != servidoresMX.end();) {
-			string domain = (*it).first;
-			vector<auto_ptr<Sender> > v_senders = (*it).second;
-
-			Pointer
-					pointer(
-							s_CI,
-							"select * from EmktFilaEnvioPeca where id_peca=%d and id_campanha=%d and dominio(email) ='%s' limit 1 ",
-							id_peca, id_campanha, domain);
-
-			if (pointer.total_record_set == 0) {
-				servidoresMX.erase(it++);
-			} else {
-				debug.debug("%d emails na fila para: %s",
-						pointer.total_record_set, domain);
-
-				if (pointer.next()) {
-					for (vector<string>::iterator itv = mxs.begin(); itv
-							!= mxs.end(); ++itv) {
-						string mx = (*itv).second;
-
-						itSender = mapSenders.find(mx);
-
-						if (isSender == mapSenders.end()) {
-							auto_ptr<Sender> ptr(new Sender);
-							mapSenders[mx] = ptr;
-						}
-
-						if (sender.getStatus() == 0) {
-							mxs.erase(itv);
-							continue;
-						}
-
-						//sender					.
-					}
-				}
-				++it;
-			}
-
-			Sleep(1);
-
-		}
-
-		if (finalizar > 0) {
-			debug.debug("PH[%d]::Run -- Finalizando peca", id_peca);
-			break;
-		}
-
-	}//FIM Do WHILE
-
+void
+PecaHandler::finalizar_peca(const Peca &p) {
 	try {
-		Database database(s_CI);
-		debug.info("Finalizando Peca: id_campanha='%d', id_peca='%d'",
-				id_campanha, id_peca);
+		Database database;
+		debug->info("Finalizando Peca: id_campanha='%d', id_peca='%d'",
+				p.campanhaId, p.pecaId);
 		database.executeQuery(
-				"update EmktPeca set stats=2 where id_peca='%d' and id_campanha='%d'",
-				id_peca, id_campanha);
+				"update EmktPeca set stats=2 where id_campanha='%d' and id_peca='%d'",
+				p.campanhaId, p.pecaId);
+
+		p.ativa = false;
 	} catch (DBException dbe) {
-		debug.error("PH[%d]::DBException:: %s", id_peca,
-				dbe.err_description.c_str());
-
+		debug->error("Peca %d - ERRO: %s", p.pecaId, dbe.err_description.c_str());
 	}
-
-	debug.debug("PH[%d]::Run -- Fim", id_peca);
-	setRunning(false);
-	return NULL;
-
-}
-
-DNS = "";
-debug = new Debug("PecaHandler");
-
-for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
-
-	db.executeQuery("replace into EmktStatsEnvio "
-			"(id_peca,id_campanha,error_code,email,enviado)"
-			" values ('%d','%d','%d','%s',now())", id_peca, id_campanha,
-			em.error, em.recipient.email.c_str());
-
-	if (em.error >= 550) {
-		db.executeQuery(
-				"insert ignore into EmktListaNegra (email,code,mensagem) "
-				"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
-				em.error, em.message.c_str());
-	}
-
-	if (em.error < 300 || em.error >= 500) {
-		db.executeQuery("delete from EmktFilaEnvioPeca where "
-				"id_campanha='%d' and id_peca='%d' and email = '%s'",
-				id_campanha, id_peca, em.recipient.email.c_str());
-	}
-
-	debug.debug("Peca (%d/%d): %d - %s ", id_campanha, id_peca, em.error,
-			em.recipient.email.c_str());
-}
-
-return NULL;
 }
 

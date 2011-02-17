@@ -42,6 +42,7 @@ private:
 	static void eraseQueue(const char* email, int id_peca, int id_campanha);
 
 	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
+	void build_mx_servers();
 
 	int id;
 	Database* database;

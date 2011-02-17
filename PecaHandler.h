@@ -24,6 +24,7 @@ public:
 	PecaHandler();
 	~PecaHandler();
 
+	void finalizar_peca(const Peca &p);
 private:
 	virtual void* Run(void*);
 

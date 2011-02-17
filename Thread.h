@@ -27,38 +27,37 @@ extern "C" {
 
 static void* ThreadFunction(void*);
 
-class Thread
-{
+class Thread {
 
-friend void* ThreadFunction(void*);
+	friend void* ThreadFunction(void*);
 
 public:
-        Thread( void );
-        virtual ~Thread( void );
-	int Start(void* = NULL );
-        void Detach(void);
-        void* Wait(void);
-        void Stop(void);
-        unsigned int GetThreadID(void);
+	Thread(void);
+	virtual ~Thread(void);
+	int Start(void* = NULL);
+	void Detach(void);
+	void* Wait(void);
+	void Stop(void);
+	unsigned int GetThreadID(void);
 	void SetThreadID(int x);
-        static unsigned int GetCurrentThreadID(void);
-        static void Sleep(int);
+	static unsigned int GetCurrentThreadID(void);
+	static void Sleep(int);
 	bool getStatus();
 
 protected:
-        virtual void* Run(void*);
+	virtual void* Run(void*) = 0;
 	void setRunning(int x);
 
 private:
-        pthread_t ThreadHandle;
+	pthread_t ThreadHandle;
 	unsigned int ThreadID;
 	static Mutex mutex;
 	unsigned int GetNextThreadID(void);
 	static unsigned int NextThreadID;
-        int Started;
+	int Started;
 	int running;
-        int Detached;
-        void* Param;
+	int Detached;
+	void* Param;
 
 };
 

@@ -12,13 +12,11 @@
 #include <cstdlib>
 #include <sstream>
 
-
-QueueManager::QueueManager(int peca, int campanha, int total_emails, int tpeca)
-{
+QueueManager::QueueManager(int peca, int campanha, int total_emails, int tpeca) {
 	database = new Database();
-	
+
 	block_size = total_emails;
-	
+
 	id_peca = peca;
 	id_campanha = campanha;
 
@@ -27,193 +25,173 @@ QueueManager::QueueManager(int peca, int campanha, int total_emails, int tpeca)
 	debug = new Debug("QueueManager");
 }
 
-
 QueueManager::~QueueManager() {
 	Stop();
 }
 
 void*
-QueueManager::Run(void* param)
-{
+QueueManager::Run(void* param) {
 	while (1) {
 		debug.info("Queueing...");
-
-
-
 
 		sleep(30);
 	}
 }
 
-void QueueManager::includePeca(Peca& peca)
-{
+void QueueManager::includePeca(Peca& peca) {
 	Pointer pt = new Pointer("select count(*) as c from EmktFilaEnvioPeca "
-							 "where id_peca=%d and id_campanha=%d", peca.pecaId, peca.campanhaId);
+		"where id_peca=%d and id_campanha=%d", peca.pecaId, peca.campanhaId);
 
 	int num_emails = 0;
-	if (pt.next()) num_emails = atoi(pt.get("c"));
+	if (pt.next())
+		num_emails = atoi(pt.get("c"));
 
-	if (num_emails > 0)
-	{
+	if (num_emails > 0) {
 		//Se o programa retornou sem ter excluido os emails da fila
 		//é porque não foram entregues, então ao reiniciar recolocamos todos
 		//na fila e caso seja a primeira, nao ira mudar nada
-		database.executeQuery("update EmktFilaEnvioPeca set stats=0, id_thread = %d "
-						  "where id_peca=%d and id_campanha=%d and id_thread = 0 "
-						  "limit %d",
-						  INSTANCE_NUM,
-						  peca.pecaId,
-						  peca.campanhaId,
-						  num_emails);
+		database.executeQuery(
+				"update EmktFilaEnvioPeca set stats=0, id_thread = %d "
+					"where id_peca=%d and id_campanha=%d and id_thread = 0 "
+					"limit %d", INSTANCE_NUM, peca.pecaId, peca.campanhaId,
+				num_emails);
 
 		pecas.push_back(peca);
 	}
 }
 
-void QueueManager::cancelPeca(Peca& peca)
-{
+void QueueManager::cancelPeca(Peca& peca) {
 	vector<Peca>::iterator it;
 
-	for (it = pecas.begin(); it != pecas.end(); it++)
-	{
+	for (it = pecas.begin(); it != pecas.end(); it++) {
 		Peca p = *it;
-		if (p == peca)
-		{
+		if (p == peca) {
 			p.ativa = false;
 			break;
 		}
 	}
 }
 
-bool
-QueueManager::returnQueue()
-{
-	try{
-		result = database->select("select id_peca from EmktPeca where date_add(data_enviar, "
-						"INTERVAL 5 DAY) > now() and id_peca='%d' and"
-						" id_campanha='%d'",id_peca,id_campanha);
-		if(mysql_num_rows(result) > 0){
-			
+bool QueueManager::returnQueue() {
+	try {
+		result = database->select(
+				"select id_peca from EmktPeca where date_add(data_enviar, "
+					"INTERVAL 5 DAY) > now() and id_peca='%d' and"
+					" id_campanha='%d'", id_peca, id_campanha);
+		if (mysql_num_rows(result) > 0) {
+
 			debug->debug("Erros temporarios marcados para nova tentativa");
 
-			database->executeQuery("update EmktFilaEnvioPeca set stats='0' where id_peca='%d' and"
-						" id_campanha='%d' and stats='2'",id_peca,id_campanha);
+			database->executeQuery(
+					"update EmktFilaEnvioPeca set stats='0' where id_peca='%d' and"
+						" id_campanha='%d' and stats='2'", id_peca, id_campanha);
 
 		} else {
 			ErrorMessages_t em2;
 			em2.message_error = "Muitos dias na fila";
 			em2.id_error = 850;
-			debug->debug("Excluindo os que ficaram na fila a mais do que o tempo limite");
-		    try{
-				Pointer p2(conn,"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",id_peca,id_campanha);
-				while(p2.next()){
+			debug->debug(
+					"Excluindo os que ficaram na fila a mais do que o tempo limite");
+			try {
+				Pointer
+						p2(
+								conn,
+								"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",
+								id_peca, id_campanha);
+				while (p2.next()) {
 					string email = p2.get("email");
-					statsInsert(email.c_str(),850);
+					statsInsert(email.c_str(), 850);
 					eraseQueue(p2.get("email"));
-	
+
 				}
-			
-			debug->debug("MUITOS DIAS DE FILA: Camp. %d / Peca %d",id_campanha,id_peca);
-		    } catch(DBException dbe){
-		    	debug->warn("QM :: EMail muito tempo de fila err: \n%s\n\n\n",dbe.err_description.c_str());
-		    }
-			
+
+				debug->debug("MUITOS DIAS DE FILA: Camp. %d / Peca %d",
+						id_campanha, id_peca);
+			} catch (DBException dbe) {
+				debug->warn("QM :: EMail muito tempo de fila err: \n%s\n\n\n",
+						dbe.err_description.c_str());
+			}
+
 		}
-	
+
 		database->freeResult();
-	} catch(DBException dbe) {
-		debug->warn("ERR no returnQueue():\n%\n\n",dbe.err_description.c_str());
+	} catch (DBException dbe) {
+		debug->warn("ERR no returnQueue():\n%\n\n", dbe.err_description.c_str());
 		throw dbe;
 	}
 
 	return true;
 }
 
-
-void
-QueueManager::statsInsert(const char* email, int code)
-{
-	try{
+void QueueManager::statsInsert(const char* email, int code) {
+	try {
 		db.executeQuery("replace into EmktStatsEnvio "
-				"(id_peca,id_campanha,error_code,email,enviado) "
-				"values ('%d','%d','%d','%s',now())",id_peca,id_campanha,code,email);
+			"(id_peca,id_campanha,error_code,email,enviado) "
+			"values ('%d','%d','%d','%s',now())", id_peca, id_campanha, code,
+				email);
 
-	} catch(DBException dbe) {
+	} catch (DBException dbe) {
 		throw dbe;
-	} 
+	}
 }
 
-void
-QueueManager::statsInsert(const char* email, int code, const std::string& mensagem, int id_peca, int id_campanha)
-{
-	try{
+void QueueManager::statsInsert(const char* email, int code,
+		const std::string& mensagem, int id_peca, int id_campanha) {
+	try {
 		db.executeQuery("replace into EmktStatsEnvio "
-				"(id_peca,id_campanha,error_code,email,enviado)" 
-				" values ('%d','%d','%d','%s',now())",
-				id_peca,id_campanha,code,email);
+			"(id_peca,id_campanha,error_code,email,enviado)"
+			" values ('%d','%d','%d','%s',now())", id_peca, id_campanha, code,
+				email);
 
 		if (code >= 550) {
-			db.executeQuery("insert ignore into EmktListaNegra values ('%s',%d,'%s') ",
-				email,
-				code,
-				mensagem.c_str() );
+			db.executeQuery(
+					"insert ignore into EmktListaNegra values ('%s',%d,'%s') ",
+					email, code, mensagem.c_str());
 		}
 
-	} catch(DBException dbe) {
+	} catch (DBException dbe) {
 		throw dbe;
-	} 
+	}
 }
 
-
-void
-QueueManager::eraseQueue(const char* email)
-{
-	try{
+void QueueManager::eraseQueue(const char* email) {
+	try {
 		db.executeQuery("delete from "
-						"EmktFilaEnvioPeca where "
-						"id_campanha='%d' and id_peca='%d' and email = '%s'",
-						id_campanha,id_peca,email);
-	} catch(DBException dbe) {
+			"EmktFilaEnvioPeca where "
+			"id_campanha='%d' and id_peca='%d' and email = '%s'", id_campanha,
+				id_peca, email);
+	} catch (DBException dbe) {
 		throw dbe;
 	}
 }
 
-void
-QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha)
-{
+void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha) {
 	Database db;
-	try{
-		db.executeQuery("delete from EmktFilaEnvioPeca where id_campanha='%d' and id_peca='%d' and email = '%s'",
-					id_campanha,id_peca,email);
+	try {
+		db.executeQuery(
+				"delete from EmktFilaEnvioPeca where id_campanha='%d' and id_peca='%d' and email = '%s'",
+				id_campanha, id_peca, email);
 
-	} catch(DBException dbe) {
+	} catch (DBException dbe) {
 		throw dbe;
 	}
 }
 
-vDadosPessoa
-QueueManager::getEmails(int threadId)
-{
+vDadosPessoa QueueManager::getEmails(int threadId) {
 	vDadosPessoa listEmails;
 
-	try{
-	
-		Pointer pointer(
-			"select *,dominio(email) as domain "
+	try {
+
+		Pointer pointer("select *,dominio(email) as domain "
 			"from EmktFilaEnvioPeca where id_peca='%d' "
 			"and id_campanha='%d' and (stats='0') "
-			"order by email limit 0,%d",
-			id_peca,
-			id_campanha,
-			block_size);
+			"order by email limit 0,%d", id_peca, id_campanha, block_size);
 
-
-		if(pointer.getTotal() < 1 ) {
+		if (pointer.getTotal() < 1) {
 			returnQueue();
 
-			pointer.query(
-				"select "
-				"*, " 
+			pointer.query("select "
+				"*, "
 				"dominio(email) as domain "
 				"from EmktFilaEnvioPeca "
 				"where "
@@ -222,36 +200,36 @@ QueueManager::getEmails(int threadId)
 				"and (stats='0' or stats='2') "
 				"order by "
 				"dominio(email) "
-				"limit 0,%d",
-				id_peca,id_campanha,block_size);
+				"limit 0,%d", id_peca, id_campanha, block_size);
 
 		}
 
-		if( pointer.getTotal() > pointer.getPosicao() ) {
-			srand((unsigned)time(0));
+		if (pointer.getTotal() > pointer.getPosicao()) {
+			srand((unsigned) time(0));
 			unsigned long random_number;
-    		unsigned long lowest=100, highest=99999999;
-    		unsigned long range=(highest-lowest)+1;
-			
-			for(int i = 0; i < block_size; i++){
-				if(pointer.getNext()){
-					random_number = lowest + (unsigned long)((1.0*range*rand())/(RAND_MAX + 1.0));
-					
+			unsigned long lowest = 100, highest = 99999999;
+			unsigned long range = (highest - lowest) + 1;
+
+			for (int i = 0; i < block_size; i++) {
+				if (pointer.getNext()) {
+					random_number = lowest + (unsigned long) ((1.0 * range
+							* rand()) / (RAND_MAX + 1.0));
+
 					stringstream ss;
 					ss << random_number;
-					
+
 					string s = pointer.get("domain");
 
 					//Domain to lower
-					char *buf = new char[s.length ()];
-					s.copy (buf, s.length ());
-					for (int f = 0; f < (int) s.length (); f++) {
-						buf[f] = tolower (buf[f]);
+					char *buf = new char[s.length()];
+					s.copy(buf, s.length());
+					for (int f = 0; f < (int) s.length(); f++) {
+						buf[f] = tolower(buf[f]);
 					}
-					std::string r (buf, s.length ());
+					std::string r(buf, s.length());
 					delete buf;
 
-					if(i == 0){
+					if (i == 0) {
 						domain = pointer.get("domain");
 						dadosPessoa_t dp;
 						dp.email = pointer.get("email");
@@ -260,13 +238,13 @@ QueueManager::getEmails(int threadId)
 						listEmails.push_back(dp);
 						database->executeQuery("update EmktFilaEnvioPeca "
 							"set stats='1',id_thread='%d' where id_peca='%d' and "
-							"id_campanha='%d' and email='%s'",threadId,id_peca,
-							id_campanha,pointer.get("email"));
+							"id_campanha='%d' and email='%s'", threadId,
+								id_peca, id_campanha, pointer.get("email"));
 
-					} else if(strcmp(r.c_str(),domain.c_str()) != 0 ){
+					} else if (strcmp(r.c_str(), domain.c_str()) != 0) {
 						pointer.backRecord();
 						break;
-						
+
 					} else {
 						dadosPessoa_t dp;
 						dp.email = pointer.get("email");
@@ -275,21 +253,17 @@ QueueManager::getEmails(int threadId)
 						listEmails.push_back(dp);
 						database->executeQuery("update EmktFilaEnvioPeca set "
 							"stats='1',id_thread='%d' where id_peca='%d' and "
-							"id_campanha='%d' and email='%s'",
-							threadId,id_peca,
-							id_campanha,
-							pointer.get("email")
-							);
-					
+							"id_campanha='%d' and email='%s'", threadId,
+								id_peca, id_campanha, pointer.get("email"));
+
 					}
-				 
+
 				}
-				
-				
+
 			}
 		}
-	
-	} catch(DBException dbe) {
+
+	} catch (DBException dbe) {
 		debug->error("QUEUE MGR. EXCEPTION || %s!", dbe.err_description.c_str());
 		throw dbe;
 	}
@@ -298,17 +272,17 @@ QueueManager::getEmails(int threadId)
 
 }
 
-void
-QueueManager::process_results()
-{
-	if(em.id_error < 300 && em.id_error > 0)
-	{ //sucesso no envio, verificar se todos usuarios eram validos
-		for(unsigned int x = 0; x < em.id_email_error.size(); x++)
-		{
-			QueueManager::statsInsert((em.emails_error[x]).c_str(),em.id_email_error[x], em.message_error, id_peca, id_campanha);
-			QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca, id_campanha);
+void QueueManager::process_results() {
+	if (em.id_error < 300 && em.id_error > 0) { //sucesso no envio, verificar se todos usuarios eram validos
+		for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+			QueueManager::statsInsert((em.emails_error[x]).c_str(),
+					em.id_email_error[x], em.message_error, id_peca,
+					id_campanha);
+			QueueManager::eraseQueue((em.emails_error[x]).c_str(), id_peca,
+					id_campanha);
 
-			debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ",em.id_error, (em.emails_error[x]).c_str(), id_campanha, id_peca);
+			debug.debug("*** %d - %s (Campanha:%d-Peca:%d) ", em.id_error,
+					(em.emails_error[x]).c_str(), id_campanha, id_peca);
 		}
 
 		em.message_error = mail->getErrorMessages().message_error;
@@ -316,5 +290,48 @@ QueueManager::process_results()
 
 		tratandoErros(em, es.id_peca, es.id_campanha);
 
+	}
+}
+
+void QueueManager::build_mx_servers() {
+	DNS _dns(DNS);
+	Pointer pointer(
+			"select distinct dominio(email) as dominio from EmktFilaEnvioPeca "
+				"where id_peca=%d and id_campanha=%d and id_thread = %d",
+			id_peca, id_campanha, INSTANCE_NUM);
+
+	while (pointer.next()) {
+		vector<string> vdd;
+		string domain = pointer.get("dominio");
+
+		_dns.GetMX(ddv);
+		debug.debug("Num. MX para %s: %d", domain.c_str(), vdd.size());
+		servidoresMX[domain] = vdd;
+	}
+}
+
+void QueueManager::trata_retorno() {
+	for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
+
+		db.executeQuery("replace into EmktStatsEnvio "
+				"(id_peca,id_campanha,error_code,email,enviado)"
+				" values ('%d','%d','%d','%s',now())", id_peca, id_campanha,
+				em.error, em.recipient.email.c_str());
+
+		if (em.error >= 550) {
+			db.executeQuery(
+					"insert ignore into EmktListaNegra (email,code,mensagem) "
+					"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
+					em.error, em.message.c_str());
+		}
+
+		if (em.error < 300 || em.error >= 500) {
+			db.executeQuery("delete from EmktFilaEnvioPeca where "
+					"id_campanha='%d' and id_peca='%d' and email = '%s'",
+					id_campanha, id_peca, em.recipient.email.c_str());
+		}
+
+		debug.debug("Peca (%d/%d): %d - %s ", id_campanha, id_peca, em.error,
+				em.recipient.email.c_str());
 	}
 }

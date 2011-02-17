@@ -122,11 +122,11 @@ void Thread::Sleep(int delay)
 }
 
 
-void* Thread::Run(void* param)
-{
-        return NULL;
-
-}
+//void* Thread::Run(void* param)
+//{
+//        return NULL;
+//
+//}
 
 unsigned int Thread::GetNextThreadID(void){
 	mutex.Acquire();

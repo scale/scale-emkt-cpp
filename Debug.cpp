@@ -28,7 +28,8 @@ Debug::~Debug(){
 #endif
 }
 
-bool Debug::Log(const char *fmt, ...)
+bool
+Debug::Log(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -42,7 +43,8 @@ bool Debug::Log(const char *fmt, ...)
 	return true;
 }
 
-void Debug::info(const char *fmt, ...)
+void
+Debug::info(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -56,7 +58,8 @@ void Debug::info(const char *fmt, ...)
 
 
 
-void Debug::debug(const char *fmt, ...)
+void
+Debug::debug(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -68,7 +71,8 @@ void Debug::debug(const char *fmt, ...)
 	va_end(args);
 }
 
-void Debug::error(const char *fmt, ...)
+void
+Debug::error(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
@@ -80,7 +84,8 @@ void Debug::error(const char *fmt, ...)
 	va_end(args);
 }
 
-void Debug::warn(const char *fmt, ...)
+void
+Debug::warn(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);

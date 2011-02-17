@@ -13,8 +13,8 @@
 
 class Peca {
 public:
-	Peca() : ativa(true) {};
-	virtual ~Peca() {};
+	Peca() : ativa(true) { debug = new Debug("Peca"); };
+	virtual ~Peca() { delete debug; };
 	bool isValida();
 
 	std::string from;
@@ -29,7 +29,7 @@ public:
 	int pecaId;
 	int campanhaId;
 
-	Debug debug;
+	Debug *debug;
 
 	bool operator == (Peca & other)
 		{
