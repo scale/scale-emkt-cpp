@@ -7,11 +7,20 @@
  *   the Free Software Foundation; either version 2 of the License, or     *
  *   (at your option) any later version.                                   *
  ***************************************************************************/
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <mysql/mysql.h>
+
+#ifdef  __cplusplus
+}
+#endif
 
 #include "global.h"
 #include "Pointer.h"

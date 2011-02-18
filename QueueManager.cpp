@@ -12,30 +12,23 @@
 #include <cstdlib>
 #include <sstream>
 
-QueueManager::QueueManager(int peca, int campanha, int total_emails, int tpeca) {
-	database = new Database();
-
-	block_size = total_emails;
-
-	id_peca = peca;
-	id_campanha = campanha;
-
-	tipo_peca = tpeca;
-
+QueueManager::QueueManager() {
 	debug = new Debug("QueueManager");
 }
 
 QueueManager::~QueueManager() {
 	Stop();
+	delete debug;
 }
 
 void*
 QueueManager::Run(void* param) {
 	while (1) {
-		debug.info("Queueing...");
+		debug->info("Queueing...");
 
-		sleep(30);
+		Sleep(30);
 	}
+	return this;
 }
 
 void QueueManager::includePeca(Peca& peca) {
@@ -44,7 +37,7 @@ void QueueManager::includePeca(Peca& peca) {
 
 	int num_emails = 0;
 	if (pt.next())
-		num_emails = atoi(pt.get("c"));
+		num_emails = atoi(pt.get("c").c_str());
 
 	if (num_emails > 0) {
 		//Se o programa retornou sem ter excluido os emails da fila
@@ -74,7 +67,7 @@ void QueueManager::cancelPeca(Peca& peca) {
 
 bool QueueManager::returnQueue() {
 	try {
-		result = database->select(
+		result = database.select(
 				"select id_peca from EmktPeca where date_add(data_enviar, "
 					"INTERVAL 5 DAY) > now() and id_peca='%d' and"
 					" id_campanha='%d'", id_peca, id_campanha);
@@ -82,20 +75,15 @@ bool QueueManager::returnQueue() {
 
 			debug->debug("Erros temporarios marcados para nova tentativa");
 
-			database->executeQuery(
+			database.executeQuery(
 					"update EmktFilaEnvioPeca set stats='0' where id_peca='%d' and"
 						" id_campanha='%d' and stats='2'", id_peca, id_campanha);
 
 		} else {
-			ErrorMessages_t em2;
-			em2.message_error = "Muitos dias na fila";
-			em2.id_error = 850;
-			debug->debug(
-					"Excluindo os que ficaram na fila a mais do que o tempo limite");
+			debug->info("Excluindo os que ficaram na fila a mais do que o tempo limite");
 			try {
 				Pointer
 						p2(
-								conn,
 								"select * from EmktFilaEnvioPeca where id_peca='%d' and id_campanha='%d' and email not in (select email from EmktListaNegra) order by email",
 								id_peca, id_campanha);
 				while (p2.next()) {
@@ -105,10 +93,8 @@ bool QueueManager::returnQueue() {
 
 				}
 
-				debug->debug("MUITOS DIAS DE FILA: Camp. %d / Peca %d",
-						id_campanha, id_peca);
 			} catch (DBException dbe) {
-				debug->warn("QM :: EMail muito tempo de fila err: \n%s\n\n\n",
+				debug->warn("EMail muito tempo de fila err: \n%s\n\n\n",
 						dbe.err_description.c_str());
 			}
 
@@ -125,7 +111,7 @@ bool QueueManager::returnQueue() {
 
 void QueueManager::statsInsert(const char* email, int code) {
 	try {
-		db.executeQuery("replace into EmktStatsEnvio "
+		database.executeQuery("replace into EmktStatsEnvio "
 			"(id_peca,id_campanha,error_code,email,enviado) "
 			"values ('%d','%d','%d','%s',now())", id_peca, id_campanha, code,
 				email);
@@ -138,7 +124,7 @@ void QueueManager::statsInsert(const char* email, int code) {
 void QueueManager::statsInsert(const char* email, int code,
 		const std::string& mensagem, int id_peca, int id_campanha) {
 	try {
-		db.executeQuery("replace into EmktStatsEnvio "
+		database.executeQuery("replace into EmktStatsEnvio "
 			"(id_peca,id_campanha,error_code,email,enviado)"
 			" values ('%d','%d','%d','%s',now())", id_peca, id_campanha, code,
 				email);
@@ -156,7 +142,7 @@ void QueueManager::statsInsert(const char* email, int code,
 
 void QueueManager::eraseQueue(const char* email) {
 	try {
-		db.executeQuery("delete from "
+		database.executeQuery("delete from "
 			"EmktFilaEnvioPeca where "
 			"id_campanha='%d' and id_peca='%d' and email = '%s'", id_campanha,
 				id_peca, email);
@@ -166,9 +152,8 @@ void QueueManager::eraseQueue(const char* email) {
 }
 
 void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha) {
-	Database db;
 	try {
-		db.executeQuery(
+		database.executeQuery(
 				"delete from EmktFilaEnvioPeca where id_campanha='%d' and id_peca='%d' and email = '%s'",
 				id_campanha, id_peca, email);
 
@@ -177,8 +162,8 @@ void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha) {
 	}
 }
 
-vDadosPessoa QueueManager::getEmails(int threadId) {
-	vDadosPessoa listEmails;
+vector<Address> QueueManager::getEmails() {
+	vector<Address> listEmails;
 
 	try {
 
@@ -314,20 +299,20 @@ void QueueManager::trata_retorno() {
 	for (unsigned int x = 0; x < em.id_email_error.size(); x++) {
 
 		db.executeQuery("replace into EmktStatsEnvio "
-				"(id_peca,id_campanha,error_code,email,enviado)"
-				" values ('%d','%d','%d','%s',now())", id_peca, id_campanha,
+			"(id_peca,id_campanha,error_code,email,enviado)"
+			" values ('%d','%d','%d','%s',now())", id_peca, id_campanha,
 				em.error, em.recipient.email.c_str());
 
 		if (em.error >= 550) {
 			db.executeQuery(
 					"insert ignore into EmktListaNegra (email,code,mensagem) "
-					"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
+						"values ('%s',%d,'%s') ", em.recipient.email.c_str(),
 					em.error, em.message.c_str());
 		}
 
 		if (em.error < 300 || em.error >= 500) {
 			db.executeQuery("delete from EmktFilaEnvioPeca where "
-					"id_campanha='%d' and id_peca='%d' and email = '%s'",
+				"id_campanha='%d' and id_peca='%d' and email = '%s'",
 					id_campanha, id_peca, em.recipient.email.c_str());
 		}
 

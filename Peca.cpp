@@ -10,12 +10,12 @@
 bool Peca::isValida() {
 	if( html.length() < 10 )
 	{
-		debug.error("ERRO: Body HTML invalido.");
+		debug->error("ERRO: Body HTML invalido.");
 		return false;
 	}
 	if( subject.length() < 3 )
 	{
-		debug.error("ERRO: Subject invalido? {%s}", subject.c_str());
+		debug->error("ERRO: Subject invalido? {%s}", subject.c_str());
 		return false;
 	}
 	return true;

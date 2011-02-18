@@ -29,7 +29,7 @@ QuotedPrintable::Encode(const std::string& data)
 	unsigned char anterior;
 	const char *S = data.c_str();
 
-    while(b=*S++) {
+    while((b = *S++)) {
 
       if(b == '\n'){
 	anterior = *S-1;
@@ -78,9 +78,9 @@ QuotedPrintable::Decode(const std::string& S)
 
     if(!S.empty()) {
       const char* src=S.c_str();
-      while(b=*src++) {
+      while((b = *src++)) {
         if(b=='=') {
-          if(b=*src++) {
+          if((b = *src++)) {
             b|=0x20;
             B=(*src++)|0x20;
             b=(b>'9') ? b-'a'+10 : b-'0';

@@ -24,7 +24,7 @@ public:
 	QueueManager();
 	~QueueManager();
 
-	vector<Address> getEmails(int threadId);
+	vector<Address> getEmails();
 
 	void includePeca(Peca& peca);
 	void cancelPeca(Peca& peca);
@@ -44,13 +44,8 @@ private:
 	void* tratarErros(ResultMessage& em, int id_peca, int id_campanha);
 	void build_mx_servers();
 
-	int id;
-	Database* database;
-	int block_size;
-	string domain;
-	int id_peca;
-	int id_campanha;
-	int terminate;
+	Debug *debug;
+	Database database;
 
 	map<string, Mailer> servidoresMX;
 	vector<Peca> pecas;

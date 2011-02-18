@@ -39,16 +39,6 @@ public:
 	int error;
 };
 
-struct _error_messages {
-	std::vector<Address> emails_error;
-	std::vector<int> id_email_error;
-
-	std::string message_error;
-	int id_error;
-};
-typedef struct _error_messages ErrorMessages_t;
-
-
 
 class Mailer {
 

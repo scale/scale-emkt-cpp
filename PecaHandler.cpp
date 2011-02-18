@@ -15,17 +15,14 @@
 #include <memory>
 using namespace std;
 
-PecaHandler::PecaHandler(int peca, int campanha, int total_emails = 1) {
+PecaHandler::PecaHandler() {
 	//	mutex.Acquire();
-
-	debug.debug("PecaHandler::PecaHandler -- campanha = %d / peca = %d ",
-			id_campanha, id_peca);
-
 	//	mutex.Release();
+	debug = new Debug("PecaHandler");
 }
 
 PecaHandler::~PecaHandler() {
-
+	delete debug;
 }
 
 void PecaHandler::resetEnvio(Peca &peca) {
@@ -41,9 +38,9 @@ void PecaHandler::lePecasAtivas() {
 	copy(pecas.begin(), pecas.end(), v);
 	try {
 		Pointer
-				pointer(
-						"select * from EmktPeca P inner join EmktCampanha C using(id_campanha, id_peca) "
-							"where P.data_enviar <= now() and C.stats = 0 and P.stats != 2");
+				pointer("select * from "
+						"EmktPeca P inner join EmktCampanha C using(id_campanha, id_peca) "
+						"where P.data_enviar <= now() and C.stats = 0 and P.stats != 2");
 
 		while (pointer.next()) {
 
@@ -54,10 +51,10 @@ void PecaHandler::lePecasAtivas() {
 			peca.html = pointer.get("corpoHTML");
 			peca.html += " ";
 
-			peca.campanhaId = atoi(pointer.get("id_campanha"));
-			peca.pecaId = atoi(pointer.get("id_peca"));
+			peca.campanhaId = atoi(pointer.get("id_campanha").c_str());
+			peca.pecaId = atoi(pointer.get("id_peca").c_str());
 
-			debug.debug("Peca:%d/%d - %s", peca.campanhaId, peca.pecaId,
+			debug->debug("Peca:%d/%d - %s", peca.campanhaId, peca.pecaId,
 					peca.subject.c_str());
 
 			vector<Peca>::iterator it;
@@ -81,7 +78,7 @@ void PecaHandler::lePecasAtivas() {
 		}
 
 	} catch (DBException dbe) {
-		debug.error("%s", dbe.err_description.c_str());
+		debug->error("%s", dbe.err_description.c_str());
 	}
 }
 
@@ -90,13 +87,19 @@ PecaHandler::Run(void* param) {
 
 	Peca peca;
 
-	resetEnvio();
+	lePecasAtivas();
+
+	vector<Peca>::iterator it;
+	for (it = pecas.begin(); it != pecas.end(); it++) {
+		resetEnvio(*it);
+	}
 
 	while (1) {
 		lePecasAtivas();
 		Sleep(15);
 	}
 
+	return this;
 }
 
 void

@@ -33,6 +33,7 @@ private:
 
 	std::vector<Peca> pecas;
 	Database database;
+	Debug *debug;
 };
 
 
