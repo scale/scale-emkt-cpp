@@ -39,6 +39,7 @@ public:
 	Message();
 	virtual ~Message();
 
+	struct mx mx;
 	Address from;
 	Address recipient;
 	std::string subject;

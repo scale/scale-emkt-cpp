@@ -24,6 +24,31 @@ QueueManager::~QueueManager() {
 void*
 QueueManager::Run(void* param) {
 	while (1) {
+		vector<Message> messages;
+
+		vector<Peca>::iterator it;
+		for (it = pecas.begin(); it != pecas.end(); it++) {
+			Peca peca = (*it);
+			vector<Address> addresses = load_queue(peca);
+
+			vector<Address>::iterator itA;
+			for (itA = addresses.begin(); it != addresses.end(); it++) {
+
+				std::auto_ptr<Message> msg(new Message());
+				msg->peca(peca);
+
+				msg->recipient = (*itA);
+
+				std::string domain = msg->recipient.domain();
+
+				check_for_best_mx(msg);
+
+				messages.push_back(msg);
+			}
+		}
+
+
+
 		debug->info("Queueing...");
 
 		Sleep(30);
@@ -31,7 +56,7 @@ QueueManager::Run(void* param) {
 	return this;
 }
 
-void QueueManager::includePeca(Peca& peca) {
+void QueueManager::include_peca(Peca& peca) {
 	Pointer pt = new Pointer("select count(*) as c from EmktFilaEnvioPeca "
 		"where id_peca=%d and id_campanha=%d", peca.pecaId, peca.campanhaId);
 
@@ -53,7 +78,7 @@ void QueueManager::includePeca(Peca& peca) {
 	}
 }
 
-void QueueManager::cancelPeca(Peca& peca) {
+void QueueManager::cancel_peca(Peca& peca) {
 	vector<Peca>::iterator it;
 
 	for (it = pecas.begin(); it != pecas.end(); it++) {
@@ -65,7 +90,7 @@ void QueueManager::cancelPeca(Peca& peca) {
 	}
 }
 
-bool QueueManager::returnQueue() {
+bool QueueManager::return_queue() {
 	try {
 		result = database.select(
 				"select id_peca from EmktPeca where date_add(data_enviar, "
@@ -162,90 +187,65 @@ void QueueManager::eraseQueue(const char* email, int id_peca, int id_campanha) {
 	}
 }
 
-vector<Address> QueueManager::getEmails() {
+vector<Address> QueueManager::load_queue(Peca &peca) {
 	vector<Address> listEmails;
 
 	try {
 
-		Pointer pointer("select *,dominio(email) as domain "
-			"from EmktFilaEnvioPeca where id_peca='%d' "
-			"and id_campanha='%d' and (stats='0') "
-			"order by email limit 0,%d", id_peca, id_campanha, block_size);
+		Pointer pointer("select * from EmktFilaEnvioPeca where "
+				"id_peca='%d' and id_campanha='%d' and thread_id=%d "
+				"order by email limit 0,%d",
+				peca.pecaId,
+				peca.campanhaId,
+				INSTANCE_NUM,
+				1000);
 
-		if (pointer.getTotal() < 1) {
-			returnQueue();
+		while (pointer.next()) {
+			random_number = lowest + (unsigned long) ((1.0 * range * rand()) / (RAND_MAX + 1.0));
 
-			pointer.query("select "
-				"*, "
-				"dominio(email) as domain "
-				"from EmktFilaEnvioPeca "
-				"where "
-				"id_peca='%d' "
-				"and id_campanha='%d' "
-				"and (stats='0' or stats='2') "
-				"order by "
-				"dominio(email) "
-				"limit 0,%d", id_peca, id_campanha, block_size);
+			stringstream ss;
+			ss << random_number;
 
-		}
+			string s = pointer.get("domain");
 
-		if (pointer.getTotal() > pointer.getPosicao()) {
-			srand((unsigned) time(0));
-			unsigned long random_number;
-			unsigned long lowest = 100, highest = 99999999;
-			unsigned long range = (highest - lowest) + 1;
+			//Domain to lower
+			char *buf = new char[s.length()];
+			s.copy(buf, s.length());
+			for (int f = 0; f < (int) s.length(); f++) {
+				buf[f] = tolower(buf[f]);
+			}
+			std::string r(buf, s.length());
+			delete buf;
 
-			for (int i = 0; i < block_size; i++) {
-				if (pointer.getNext()) {
-					random_number = lowest + (unsigned long) ((1.0 * range
-							* rand()) / (RAND_MAX + 1.0));
+			if (i == 0) {
+				domain = pointer.get("domain");
+				dadosPessoa_t dp;
+				dp.email = pointer.get("email");
+				dp.nome = pointer.get("nome");
+				ss >> dp.id;
+				listEmails.push_back(dp);
+				database->executeQuery("update EmktFilaEnvioPeca "
+						"set stats='1',id_thread='%d' where id_peca='%d' and "
+						"id_campanha='%d' and email='%s'", threadId, id_peca,
+						id_campanha, pointer.get("email"));
 
-					stringstream ss;
-					ss << random_number;
+			} else if (strcmp(r.c_str(), domain.c_str()) != 0) {
+				pointer.backRecord();
+				break;
 
-					string s = pointer.get("domain");
-
-					//Domain to lower
-					char *buf = new char[s.length()];
-					s.copy(buf, s.length());
-					for (int f = 0; f < (int) s.length(); f++) {
-						buf[f] = tolower(buf[f]);
-					}
-					std::string r(buf, s.length());
-					delete buf;
-
-					if (i == 0) {
-						domain = pointer.get("domain");
-						dadosPessoa_t dp;
-						dp.email = pointer.get("email");
-						dp.nome = pointer.get("nome");
-						ss >> dp.id;
-						listEmails.push_back(dp);
-						database->executeQuery("update EmktFilaEnvioPeca "
-							"set stats='1',id_thread='%d' where id_peca='%d' and "
-							"id_campanha='%d' and email='%s'", threadId,
-								id_peca, id_campanha, pointer.get("email"));
-
-					} else if (strcmp(r.c_str(), domain.c_str()) != 0) {
-						pointer.backRecord();
-						break;
-
-					} else {
-						dadosPessoa_t dp;
-						dp.email = pointer.get("email");
-						dp.nome = pointer.get("nome");
-						ss >> dp.id;
-						listEmails.push_back(dp);
-						database->executeQuery("update EmktFilaEnvioPeca set "
-							"stats='1',id_thread='%d' where id_peca='%d' and "
-							"id_campanha='%d' and email='%s'", threadId,
-								id_peca, id_campanha, pointer.get("email"));
-
-					}
-
-				}
+			} else {
+				dadosPessoa_t dp;
+				dp.email = pointer.get("email");
+				dp.nome = pointer.get("nome");
+				ss >> dp.id;
+				listEmails.push_back(dp);
+				database->executeQuery("update EmktFilaEnvioPeca set "
+						"stats='1',id_thread='%d' where id_peca='%d' and "
+						"id_campanha='%d' and email='%s'", threadId, id_peca,
+						id_campanha, pointer.get("email"));
 
 			}
+
 		}
 
 	} catch (DBException dbe) {
@@ -318,5 +318,31 @@ void QueueManager::trata_retorno() {
 
 		debug.debug("Peca (%d/%d): %d - %s ", id_campanha, id_peca, em.error,
 				em.recipient.email.c_str());
+	}
+}
+
+const Mailer* QueueManager::find_mailer(const std::string &domain)
+{
+	Mailer * mailer;
+	multimap<string, struct mx>::iterator pos;
+
+	if (servidoresMX.find(domain) != servidoresMX.end()) {
+		for (pos = servidoresMX.lower_bound(domain); pos
+		!= servidoresMX.upper_bound(domain); ++pos) {
+			multimap<string, *Mailer>::iterator posMailer = mailers.find(
+					pos->second.host);
+
+			if	(posMailer == mailers.end()) {
+
+				mailer = new Mailer();
+				mailer->
+				mailers.insert(make_pair(domain, mailer));
+			} else {
+
+			}
+		}
+	} else {
+
+		servidoresMX.insert( make_pair(domain,x) );
 	}
 }

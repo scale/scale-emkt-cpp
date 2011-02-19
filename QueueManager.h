@@ -47,7 +47,8 @@ private:
 	Debug *debug;
 	Database database;
 
-	map<string, Mailer> servidoresMX;
+	multimap<string /*domain*/, struct mx> servidoresMX;
+	map<string, Mailer*> mailers;
 	vector<Peca> pecas;
 };
 

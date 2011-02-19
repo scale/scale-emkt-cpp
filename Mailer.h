@@ -134,7 +134,7 @@ private:
         std::string _subject;
         // Corpo em texto
         std::string body_text;
-	// Corpo em HTML
+        // Corpo em HTML
         std::string body_html;
         // The contents of the mail message
         std::vector<char> message;
@@ -152,8 +152,6 @@ private:
         const bool lookupMXRecord;
 	// quoted-printable funcao para converter
 	char * qpEncode(const char *sfrom, int fromlen, int *tolen = NULL);
-
-	ErrorMessages_t m_ErrorMessages;
 
 	// filled in with server return strings
 	std::string returnstring;
